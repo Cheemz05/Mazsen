@@ -1,0 +1,121 @@
+<?php
+require __DIR__ . '/includes/customer_auth.php';
+$customer = customer_user();
+$customerFirstName = $customer ? explode(' ', $customer['full_name'])[0] : '';
+$customerNameParts = $customer ? preg_split('/\s+/', trim($customer['full_name']), -1, PREG_SPLIT_NO_EMPTY) : [];
+$customerInitials = $customerNameParts ? mb_strtoupper(mb_substr($customerNameParts[0], 0, 1) . (count($customerNameParts) > 1 ? mb_substr($customerNameParts[count($customerNameParts) - 1], 0, 1) : ''), 'UTF-8') : '';
+$pendingBuyNow = $_SESSION['pending_buy_now'] ?? null;
+unset($_SESSION['pending_buy_now']);
+?>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f3eb">
+  <link rel="icon" href="logo.jpg" type="image/jpeg">
+  <title>MazSen Munch &amp; Sip | Order Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/css/styles.css?v=10">
+  <link rel="stylesheet" href="assets/css/logout.css?v=1">
+</head>
+<body class="min-h-screen antialiased">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <button class="sidebar-collapse" id="sidebar-collapse" type="button" aria-label="Minimize navigation" aria-pressed="false" title="Minimize navigation">‹</button>
+      <a class="brand" href="#dashboard" aria-label="MazSen Munch and Sip home">
+        <img class="brand-logo" src="logo.jpg" alt="MazSen Munch &amp; Sip logo">
+        <span class="brand-name">MAZSEN<small>MUNCH &amp; SIP</small></span>
+      </a>
+      <p class="nav-label">WORKSPACE</p>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a class="nav-link active" href="#dashboard" data-view="dashboard"><span class="nav-icon"><i data-lucide="layout-dashboard"></i></span>Dashboard<span class="nav-count" id="dashboard-count">0</span></a>
+        <a class="nav-link" href="#products" data-view="products"><span class="nav-icon"><i data-lucide="utensils"></i></span>Order Menu</a>
+        <a class="nav-link" href="#orders" data-view="orders"><span class="nav-icon"><i data-lucide="receipt-text"></i></span>My Orders<span class="nav-count" id="order-count">0</span></a>
+        <a class="nav-link" href="#favorites" data-view="favorites"><span class="nav-icon"><i data-lucide="heart"></i></span>Favorites<span class="nav-count" id="favorite-count">0</span></a>
+        <a class="nav-link" href="#addresses" data-view="addresses"><span class="nav-icon"><i data-lucide="map-pin"></i></span>Addresses</a>
+        <a class="nav-link" href="#payments" data-view="payments"><span class="nav-icon"><i data-lucide="credit-card"></i></span>Payment Methods</a>
+        <a class="nav-link" href="#notifications" data-view="notifications"><span class="nav-icon"><i data-lucide="bell"></i></span>Notifications<span class="nav-count" id="notification-count">0</span></a>
+        <a class="nav-link" href="#rewards" data-view="rewards"><span class="nav-icon"><i data-lucide="gift"></i></span>Rewards &amp; Offers</a>
+      </nav>
+      
+      <div class="sidebar-note"><span class="status-dot" id="sidebar-store-dot"></span><div><strong id="sidebar-store-label">Now accepting orders</strong><small id="sidebar-store-note">Pickup and delivery</small></div></div>
+      <div class="sidebar-footer">Freshly made, always.<br><span>Thanks for supporting local.</span></div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <a class="mobile-brand" href="#dashboard"><img class="brand-logo" src="logo.jpg" alt=""><span>MAZSEN<small>MUNCH &amp; SIP</small></span></a>
+        <div class="breadcrumb">MazSen Munch &amp; Sip <span>/</span> <strong id="page-label">Dashboard</strong></div>
+        <div class="top-actions"><span class="open-pill" id="store-open-pill"><i></i><span id="store-status-text">Store open</span></span><?php if ($customer): ?><details class="account-menu"><summary class="account-avatar-trigger" aria-label="Open account menu" title="Account menu"><span class="customer-avatar" aria-hidden="true"><?php if (!empty($customer['profile_image'])): ?><img src="<?= htmlspecialchars($customer['profile_image'], ENT_QUOTES, 'UTF-8') ?>" alt=""><?php else: ?><?= htmlspecialchars($customerInitials, ENT_QUOTES, 'UTF-8') ?><?php endif; ?></span></summary><div class="account-menu-panel"><a href="customer/settings.php"><i data-lucide="user-round-cog" aria-hidden="true"></i>Edit my information</a><a href="customer/logout.php"><i data-lucide="log-out" aria-hidden="true"></i>Log out</a></div></details><span class="customer-greeting">Hi, <?= htmlspecialchars($customerFirstName, ENT_QUOTES, 'UTF-8') ?></span><?php else: ?><a class="text-button" href="customer/login.php?next=products">Sign in</a><a class="outline-button" href="customer/signup.php">Create account</a><?php endif; ?></div>
+      </header>
+
+      <section class="page-content" id="dashboard-view">
+        <section class="customer-hero" aria-labelledby="customer-hero-title">
+          <div class="customer-hero-copy"><span class="customer-hero-kicker"><i></i> FRESH FROM MAZSEN</span><h1 id="customer-hero-title">Good food.<br><span>Your next favorite<br>is waiting.</span></h1><p>Burgers, silog meals, fries and more—made fresh for your next munch break.</p><div class="customer-hero-actions"><button class="customer-hero-primary" type="button" data-go="products">Order now <span aria-hidden="true">→</span></button></div><span class="customer-hero-footnote">Made with care, served with a smile.</span></div>
+          <div class="customer-hero-visual" aria-hidden="true"><span class="customer-hero-orbit"></span><span class="customer-hero-glow"></span><span class="customer-hero-food">🍔</span><span class="customer-hero-spark spark-one">✦</span><span class="customer-hero-spark spark-two">✧</span><div class="customer-hero-note hero-note-top"><span class="hero-note-icon">✦</span><span><strong>Freshly made</strong><small>Just for you</small></span></div><div class="customer-hero-note hero-note-bottom"><span class="hero-note-icon">⌁</span><span><strong>Pickup &amp; delivery</strong><small>Choose what works for you</small></span></div></div>
+        </section>
+        <div class="welcome-row"><div><p class="eyebrow">WELCOME TO MAZSEN</p><h1><span id="welcome-greeting" data-first-name="<?= htmlspecialchars($customerFirstName, ENT_QUOTES, 'UTF-8') ?>">Good day<?= $customerFirstName !== '' ? ', ' . htmlspecialchars($customerFirstName, ENT_QUOTES, 'UTF-8') : '' ?></span> <span>☀</span></h1><p class="subheading">Here's what's cooking at MazSen today.</p></div></div>
+        <div class="section-heading"><div><p class="eyebrow">MAZSEN FAVORITES</p><h2>Popular on the menu</h2></div><button class="text-button" data-go="products">View all products <span>→</span></button></div>
+        <div class="popular-grid" id="popular-products"></div>
+
+        <div class="lower-grid">
+          <section class="panel recent-panel"><div class="panel-heading"><div><p class="eyebrow">YOUR ACTIVITY</p><h2>Recent orders</h2></div><button class="text-button" data-go="orders">See all <span>→</span></button></div><div id="recent-orders" class="empty-state compact-empty"><span class="empty-icon">▤</span><strong>No orders yet</strong><p>Your placed orders will show up here.</p><button class="outline-button" data-go="products">Explore the menu</button></div></section>
+          <section class="promo-card"><div class="promo-content"><span class="promo-kicker">MADE FOR MUNCH TIME</span><h2>A little comfort<br>in every bite.</h2><p>From silog meals to loaded fries, find a new favorite today.</p><button class="light-button" data-go="products">Explore menu <span>→</span></button></div><span class="promo-art" aria-hidden="true">🍔</span></section>
+        </div>
+      </section>
+
+      <section class="page-content hidden" id="products-view">
+        <div class="welcome-row page-title-row"><div><p class="eyebrow">MADE FRESH FOR YOU</p><h1>Our menu</h1><p class="subheading">Good food, good mood. Pick your favorites.</p></div><button class="cart-summary" id="cart-jump" aria-controls="cart-panel" aria-expanded="false">Your cart <strong id="cart-total-label">₱0.00</strong><span id="cart-badge">0</span></button></div>
+        <div class="menu-toolbar"><div class="category-list" id="category-list"></div><label class="search-box"><span>⌕</span><input id="search-input" type="search" placeholder="Find something delicious" aria-label="Search menu"></label></div>
+        <div class="menu-grid" id="menu-products"></div>
+        <button class="cart-backdrop" id="cart-backdrop" type="button" aria-label="Close your order"></button>
+        <aside class="cart-panel" id="cart-panel" role="dialog" aria-modal="true" aria-labelledby="cart-heading" aria-hidden="true"><div class="panel-heading"><div><p class="eyebrow">READY WHEN YOU ARE</p><h2 id="cart-heading">Your order <span id="cart-title-count">(0)</span></h2></div><div class="cart-heading-actions"><button class="text-button clear-cart" id="clear-cart">Clear</button><button class="cart-close" id="cart-close" type="button" aria-label="Close your order">×</button></div></div><div id="cart-content"></div></aside>
+      </section>
+
+      <section class="page-content hidden" id="orders-view">
+        <div class="welcome-row page-title-row"><div><p class="eyebrow">YOUR MAZSEN HISTORY</p><h1>My orders</h1><p class="subheading">Keep track of the orders you've placed.</p></div></div>
+        <div class="orders-panel panel"><div class="orders-toolbar"><div><h2>Order history</h2><p>Orders placed from your account</p></div><span class="history-count" id="history-count">0 orders</span></div><div id="orders-list"></div></div>
+      </section>
+      <section class="page-content hidden" id="favorites-view">
+        <div class="welcome-row page-title-row"><div><p class="eyebrow">YOUR SAVED PICKS</p><h1>Favorites</h1><p class="subheading">Keep the meals you love close at hand.</p></div></div>
+        <div class="menu-grid" id="favorite-products"></div>
+      </section>
+      <section class="page-content hidden" id="addresses-view">
+        <div class="welcome-row page-title-row"><div><p class="eyebrow">DELIVERY DETAILS</p><h1>Addresses</h1><p class="subheading">Manage the address used for your orders.</p></div><a class="outline-button" href="customer/settings.php">Edit account details</a></div><div id="address-content"></div>
+      </section>
+      <section class="page-content hidden" id="payments-view">
+        <div class="welcome-row page-title-row"><div><p class="eyebrow">CHECKOUT</p><h1>Payment methods</h1><p class="subheading">See the payment option currently available for MazSen orders.</p></div></div><div id="payment-content"></div>
+      </section>
+      <section class="page-content hidden" id="notifications-view">
+        <div class="welcome-row page-title-row"><div><p class="eyebrow">ORDER UPDATES</p><h1>Notifications</h1><p class="subheading">Follow the latest progress on your orders.</p></div></div><div id="notification-content"></div>
+      </section>
+      <section class="page-content hidden" id="rewards-view">
+        <div class="welcome-row page-title-row"><div><p class="eyebrow">A LITTLE EXTRA</p><h1>Rewards &amp; Offers</h1><p class="subheading">MazSen perks and special offers will be shown here when available.</p></div></div>
+        <article class="account-info-card rewards-placeholder"><span class="account-info-icon">♙</span><div><h2>Good things are cooking</h2><p>There are no reward points or active offers on your account yet. Check back here for future MazSen perks.</p></div></article>
+      </section>
+      <footer class="page-footer"><span>© 2026 MazSen Munch &amp; Sip</span><span>Good food, made with care <b>♥</b></span></footer>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="confirm-backdrop" id="confirm-backdrop" aria-hidden="true">
+    <section class="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+      <span class="confirm-mark" aria-hidden="true">?</span>
+      <h2 id="confirm-title">Please confirm</h2>
+      <p id="confirm-message"></p>
+      <div class="confirm-actions"><button class="outline-button" id="confirm-cancel" type="button">Go back</button><button class="primary-button" id="confirm-accept" type="button">Confirm</button></div>
+    </section>
+  </div>
+  <div class="food-detail-backdrop" id="food-detail-backdrop" aria-hidden="true">
+    <section class="food-detail-dialog" role="dialog" aria-modal="true" aria-label="Food details" tabindex="-1">
+      <header class="food-detail-top"><span>MENU DETAILS</span><button id="food-detail-close" type="button" aria-label="Back to menu" title="Back to menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7 7-7-7 7-7"/></svg><span>Back</span></button></header>
+      <div id="food-detail-content"></div>
+    </section>
+  </div>
+  <script>window.customerSignedIn = <?= $customer ? 'true' : 'false' ?>; window.customerProfile = <?= json_encode($customer ? ['id'=>(int)$customer['id'],'full_name'=>$customer['full_name'],'email'=>$customer['email'],'phone'=>$customer['phone'],'address'=>$customer['address'],'profile_image'=>$customer['profile_image'] ?? null] : null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>; window.pendingBuyNow = <?= json_encode($customer ? $pendingBuyNow : null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>; window.storeOpen = true;</script>
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script>if (window.lucide) lucide.createIcons();</script>
+  <script src="assets/js/app.js?v=9"></script>
+  <script src="assets/js/logout-transition.js?v=1"></script>
+</body>
+</html>
