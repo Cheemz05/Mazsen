@@ -1,27 +1,27 @@
 <?php
-declare(strict_types=1);
+$host = 'mysql-769509f-pingdspornillos-35bb.k.aivencloud.com'; // From your Aiven overview
+$port = '24997'; // From your Aiven overview
+$dbname = 'defaultdb'; // Your Aiven database name[cite: 7]
+$username = 'avnadmin'; // Your Aiven username[cite: 7]
+$password = 'AVNS_wXD2LTzidcGTHphuacm'; // Replace with your actual Aiven password[cite: 7]
 
-// XAMPP defaults: user "root" with no password. Update for your local setup.
-$host = '127.0.0.1';
-$database = 'munch_db';
-$username = 'root';
-$password = '';
+// Path to the CA certificate you downloaded from Aiven
+$ca_cert = __DIR__ . '/ca.pem'; // Place your downloaded ca.pem file in the same folder
 
 try {
-    $pdo = new PDO(
-        "mysql:host={$host};dbname={$database};charset=utf8mb4",
-        $username,
-        $password,
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]
-    );
-} catch (PDOException $exception) {
-    http_response_code(503);
-    if (str_ends_with(str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? ''), '/api.php')) {
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode(['error' => 'Database connection failed. Import database/schema.sql and check includes/db.php settings.']);
-    } else {
-        header('Content-Type: text/html; charset=utf-8');
-        echo '<!doctype html><html lang="en"><meta charset="utf-8"><title>Database unavailable</title><body><h1>Database unavailable</h1><p>Import database/schema.sql in phpMyAdmin and check the connection settings in includes/db.php.</p></body></html>';
-    }
-    exit;
+    $dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4";
+    
+    $options = [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        // Enforce SSL connection required by Aiven
+        PDO::MYSQL_ATTR_SSL_CA => $ca_cert,
+        PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
+    ];
+
+    $pdo = new PDO($dsn, $username, $password, $options);
+    // Connection successful!
+} catch (PDOException $e) {
+    die("Database connection failed: " . $e->getMessage());
 }
+?>
