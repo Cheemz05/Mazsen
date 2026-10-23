@@ -3,7 +3,7 @@ $host = 'mysql-769509f-pingdspornillos-35bb.k.aivencloud.com';
 $port = '24997'; 
 $dbname = 'defaultdb';
 $username = 'avnadmin';
-$password = 'AVNS_wXD2LTzidcGTHphuacm';
+$password = 'AVNS_N0L3ircRLMuLTTFXcyM';
 
 $ca_cert = __DIR__ . '/ca.pem';
 
