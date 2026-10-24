@@ -91,3 +91,4 @@ function dispatch_assign_order(PDO $pdo, string $number): ?array
     $update->execute([(int)$rider['id'], hash('sha256', $token), (int)$order['id']]);
     return ['id' => (int)$rider['id'], 'name' => (string)$rider['full_name'], 'phone' => (string)$rider['phone'], 'token' => $token];
 }
+?>

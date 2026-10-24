@@ -126,3 +126,4 @@ function social_auth_controller(string $provider): never
         social_auth_fail($exception instanceof PDOException ? 'Social sign-in is not ready in the database. Import the latest database/schema.sql, then try again.' : $exception->getMessage());
     }
 }
+?>

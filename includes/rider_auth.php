@@ -14,3 +14,4 @@ function rider_user_id(): ?int
 {
     return isset($_SESSION['mazsen_rider_id']) ? (int)$_SESSION['mazsen_rider_id'] : null;
 }
+?>
