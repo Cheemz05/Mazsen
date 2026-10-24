@@ -16,3 +16,4 @@ function admin_user_id(): ?int
         ? (int)$_SESSION['mazsen_admin_id']
         : null;
 }
+

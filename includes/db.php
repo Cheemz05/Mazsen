@@ -1,7 +1,7 @@
 <?php
 $host = 'mysql-769509f-pingdspornillos-35bb.k.aivencloud.com'; 
 $port = '24997'; 
-$dbname = 'defaultdb';
+$dbname = 'munch_db';
 $username = 'avnadmin';
 $password = 'AVNS_N0L3ircRLMuLTTFXcyM';
 
