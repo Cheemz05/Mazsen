@@ -1,21 +1,16 @@
 <?php
 declare(strict_types=1);
 header('Content-Type: application/json; charset=utf-8');
-require __DIR__ . '/customer_auth.php';
-require __DIR__ . '/admin_auth.php';
-<<<<<<< HEAD
-require __DIR__ . '/rider_auth.php';
-require __DIR__ . '/db.php';
+require_once __DIR__ . '/customer_auth.php';
+require_once __DIR__ . '/admin_auth.php';
+require_once __DIR__ . '/rider_auth.php';
+require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/dispatch.php';
-=======
-require __DIR__ . '/db.php';
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $resource = $_GET['resource'] ?? 'products';
 
 try {
-<<<<<<< HEAD
     if ($resource === 'rider-portal-location') {
         $riderId = rider_user_id();
         if ($riderId === null) { http_response_code(401); echo json_encode(['error' => 'Sign in to the rider app first.']); exit; }
@@ -188,8 +183,6 @@ try {
         echo json_encode(['url' => '../rider.php?token=' . $rider['token'], 'rider' => ['id' => $rider['id'], 'name' => $rider['name'], 'phone' => $rider['phone']]]); exit;
     }
 
-=======
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
     if ($resource === 'store' && $method === 'GET') {
         $isOpen = (bool)$pdo->query('SELECT is_open FROM store_settings WHERE id = 1')->fetchColumn();
         echo json_encode(['is_open' => $isOpen]);
@@ -221,7 +214,6 @@ try {
     }
 
     if ($resource === 'products' && $method === 'GET') {
-<<<<<<< HEAD
         // Older installations may predate the optional product image column.
         $hasProductImages = (bool)$pdo->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='products' AND COLUMN_NAME='image_path'")->fetchColumn();
         $imageColumn = $hasProductImages ? 'image_path' : 'NULL AS image_path';
@@ -275,12 +267,6 @@ try {
             if (isset($menuPhotos[$product['id']])) {
                 $product['image_path'] = $menuPhotos[$product['id']] . '?v=4x3-fill';
             }
-=======
-        $products = $pdo->query('SELECT slug AS id, name, category, price, emoji, description, popular FROM products WHERE active = 1 ORDER BY sort_order, name')->fetchAll();
-        foreach ($products as &$product) {
-            $product['price'] = (float)$product['price'];
-            $product['popular'] = (bool)$product['popular'];
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
         }
         echo json_encode($products);
         exit;
@@ -289,11 +275,7 @@ try {
     if ($resource === 'orders' && $method === 'GET') {
         $customer = customer_user();
         if (!$customer) { http_response_code(401); echo json_encode(['error' => 'Sign in to view your orders.']); exit; }
-<<<<<<< HEAD
         $ordersQuery = $pdo->prepare("SELECT o.id, o.order_number AS number, o.created_at AS createdAt, o.status, o.total, o.delivery_address AS address, o.customer_latitude, o.customer_longitude, IF(o.status IN ('On the way','Ready'),o.rider_latitude,NULL) AS rider_latitude, IF(o.status IN ('On the way','Ready'),o.rider_longitude,NULL) AS rider_longitude, IF(o.status IN ('On the way','Ready'),o.rider_location_updated_at,NULL) AS rider_location_updated_at, IF(o.rider_offer_status='Accepted' OR o.status IN ('On the way','Ready','Delivered'),r.full_name,NULL) AS rider_name FROM orders o LEFT JOIN delivery_riders r ON r.id=o.assigned_rider_id WHERE o.customer_id = ? ORDER BY o.id DESC");
-=======
-        $ordersQuery = $pdo->prepare('SELECT id, order_number AS number, created_at AS createdAt, status, total FROM orders WHERE customer_id = ? ORDER BY id DESC');
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
         $ordersQuery->execute([$customer['id']]);
         $orders = $ordersQuery->fetchAll();
         $linesQuery = $pdo->prepare('SELECT oi.order_id, p.slug AS id, oi.product_name AS name, oi.quantity FROM order_items oi JOIN products p ON p.id = oi.product_id JOIN orders o ON o.id = oi.order_id WHERE o.customer_id = ? ORDER BY oi.id');
@@ -306,13 +288,10 @@ try {
         foreach ($orders as &$order) {
             $order['total'] = (float)$order['total'];
             $order['items'] = $byOrder[$order['id']] ?? [];
-<<<<<<< HEAD
             $order['deliveryLocation'] = $order['customer_latitude'] === null || $order['customer_longitude'] === null ? null : ['latitude' => (float)$order['customer_latitude'], 'longitude' => (float)$order['customer_longitude']];
             $order['riderLocation'] = $order['rider_latitude'] === null || $order['rider_longitude'] === null ? null : ['latitude' => (float)$order['rider_latitude'], 'longitude' => (float)$order['rider_longitude'], 'updatedAt' => $order['rider_location_updated_at']];
             $order['rider'] = $order['rider_name'] ? ['name' => $order['rider_name']] : null;
             unset($order['customer_latitude'], $order['customer_longitude'], $order['rider_latitude'], $order['rider_longitude'], $order['rider_location_updated_at'], $order['rider_name']);
-=======
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
             unset($order['id']);
         }
         echo json_encode($orders);
@@ -329,21 +308,14 @@ try {
             echo json_encode(['error' => 'Invalid order number.']);
             exit;
         }
-<<<<<<< HEAD
         $cancel = $pdo->prepare("UPDATE orders SET status = 'Cancelled', assigned_rider_id=NULL, rider_offer_status='Cancelled' WHERE order_number = ? AND customer_id = ? AND status IN ('Pending','Received')");
-=======
-        $cancel = $pdo->prepare("UPDATE orders SET status = 'Cancelled' WHERE order_number = ? AND customer_id = ? AND status IN ('Pending','Received')");
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
         $cancel->execute([$number, $customer['id']]);
         if ($cancel->rowCount() !== 1) {
             http_response_code(409);
             echo json_encode(['error' => 'This order is no longer pending and cannot be cancelled.']);
             exit;
         }
-<<<<<<< HEAD
         $pdo->prepare("UPDATE order_rider_offers ofr JOIN orders o ON o.id=ofr.order_id SET ofr.status='Cancelled',ofr.responded_at=NOW() WHERE o.order_number=? AND ofr.status='Offered'")->execute([$number]);
-=======
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
         echo json_encode(['success' => true, 'status' => 'Cancelled']);
         exit;
     }
@@ -367,11 +339,7 @@ try {
             echo json_encode(['error' => 'Invalid order number.']);
             exit;
         }
-<<<<<<< HEAD
         $findOrder = $pdo->prepare('SELECT status, rider_offer_status FROM orders WHERE order_number = ? LIMIT 1');
-=======
-        $findOrder = $pdo->prepare('SELECT status FROM orders WHERE order_number = ? LIMIT 1');
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
         $findOrder->execute([$number]);
         $order = $findOrder->fetch();
         if (!$order) {
@@ -392,7 +360,6 @@ try {
             echo json_encode(['error' => 'This order has no further status step.']);
             exit;
         }
-<<<<<<< HEAD
         if ($next === 'On the way' && $order['rider_offer_status'] === 'Offered') {
             http_response_code(409);
             echo json_encode(['error' => 'Waiting for the selected rider to accept this delivery offer.']);
@@ -400,31 +367,22 @@ try {
         }
         $updateOrder = $pdo->prepare("UPDATE orders SET status = ?, rider_token_hash = IF(? = 'Delivered', NULL, rider_token_hash), rider_latitude = IF(? = 'Delivered', NULL, rider_latitude), rider_longitude = IF(? = 'Delivered', NULL, rider_longitude), rider_location_updated_at = IF(? = 'Delivered', NULL, rider_location_updated_at) WHERE order_number = ? AND status = ?");
         $updateOrder->execute([$next, $next, $next, $next, $next, $number, $order['status']]);
-=======
-        $updateOrder = $pdo->prepare('UPDATE orders SET status = ? WHERE order_number = ? AND status = ?');
-        $updateOrder->execute([$next, $number, $order['status']]);
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
         if ($updateOrder->rowCount() !== 1) {
             http_response_code(409);
             echo json_encode(['error' => 'The order changed. Refresh and try again.']);
             exit;
         }
-<<<<<<< HEAD
         if ($next === 'Delivered') {
             $pdo->prepare("UPDATE order_rider_offers ofr JOIN orders o ON o.id=ofr.order_id SET ofr.status='Completed',ofr.responded_at=NOW() WHERE o.order_number=? AND ofr.status='Accepted'")->execute([$number]);
         }
         $assignedRider = $next === 'On the way' ? dispatch_assign_order($pdo, $number) : null;
         echo json_encode(['number' => $number, 'status' => $next, 'rider' => $assignedRider ? ['id' => $assignedRider['id'], 'name' => $assignedRider['name'], 'phone' => $assignedRider['phone']] : null, 'riderUrl' => $assignedRider ? '../rider.php?token=' . $assignedRider['token'] : null]);
-=======
-        echo json_encode(['number' => $number, 'status' => $next]);
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
         exit;
     }
 
     if ($resource === 'orders' && $method === 'POST') {
         $customer = customer_user();
         if (!$customer) { http_response_code(401); echo json_encode(['error' => 'Sign in or create an account before placing your order.']); exit; }
-<<<<<<< HEAD
         $customerExists = $pdo->prepare('SELECT 1 FROM customers WHERE id = ? LIMIT 1');
         $customerExists->execute([$customer['id']]);
         if (!$customerExists->fetchColumn()) {
@@ -441,8 +399,6 @@ try {
             echo json_encode(['error' => 'Add your complete delivery address in Account Settings before ordering.']);
             exit;
         }
-=======
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
         $storeOpen = (bool)$pdo->query('SELECT is_open FROM store_settings WHERE id = 1')->fetchColumn();
         if (!$storeOpen) { http_response_code(409); echo json_encode(['error' => 'The store is closed right now and cannot accept new orders.']); exit; }
         $body = json_decode(file_get_contents('php://input'), true);
@@ -465,7 +421,6 @@ try {
             $items[] = [$product, $quantity];
             $total += (float)$product['price'] * $quantity;
         }
-<<<<<<< HEAD
         $customerLatitude = isset($body['customerLocation']['latitude']) ? filter_var($body['customerLocation']['latitude'], FILTER_VALIDATE_FLOAT) : null;
         $customerLongitude = isset($body['customerLocation']['longitude']) ? filter_var($body['customerLocation']['longitude'], FILTER_VALIDATE_FLOAT) : null;
         if ($customerLatitude === false || $customerLongitude === false || ($customerLatitude !== null && ($customerLatitude < -90 || $customerLatitude > 90)) || ($customerLongitude !== null && ($customerLongitude < -180 || $customerLongitude > 180))) { $customerLatitude = null; $customerLongitude = null; }
@@ -473,25 +428,15 @@ try {
         $number = 'MZ-' . strtoupper(bin2hex(random_bytes(3)));
         $insertOrder = $pdo->prepare("INSERT INTO orders (customer_id, customer_name, customer_phone, delivery_address, customer_latitude, customer_longitude, order_number, status, total) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', ?)");
         $insertOrder->execute([$customer['id'], $customer['full_name'], $customer['phone'], $deliveryAddress, $customerLatitude, $customerLongitude, $number, $total]);
-=======
-        $number = 'MZ-' . strtoupper(bin2hex(random_bytes(3)));
-        $insertOrder = $pdo->prepare("INSERT INTO orders (customer_id, customer_name, customer_phone, delivery_address, order_number, status, total) VALUES (?, ?, ?, ?, ?, 'Pending', ?)");
-        $insertOrder->execute([$customer['id'], $customer['full_name'], $customer['phone'], $customer['address'], $number, $total]);
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
         $orderId = (int)$pdo->lastInsertId();
         $insertLine = $pdo->prepare('INSERT INTO order_items (order_id, product_id, product_name, unit_price, quantity) VALUES (?, ?, ?, ?, ?)');
         foreach ($items as [$product, $quantity]) {
             $insertLine->execute([$orderId, $product['id'], $product['name'], $product['price'], $quantity]);
         }
         $pdo->commit();
-<<<<<<< HEAD
         $riderOffer = dispatch_offer_next($pdo, $orderId);
         http_response_code(201);
         echo json_encode(['number' => $number, 'createdAt' => date(DATE_ATOM), 'status' => 'Pending', 'total' => $total, 'address' => $deliveryAddress, 'riderOfferSent' => $riderOffer !== null,
-=======
-        http_response_code(201);
-        echo json_encode(['number' => $number, 'createdAt' => date(DATE_ATOM), 'status' => 'Pending', 'total' => $total,
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
             'items' => array_map(static fn($entry) => ['id' => $entry[0]['slug'], 'name' => $entry[0]['name'], 'quantity' => $entry[1]], $items)]);
         exit;
     }
@@ -503,10 +448,7 @@ try {
     echo json_encode(['error' => $exception->getMessage()]);
 } catch (Throwable $exception) {
     if ($pdo->inTransaction()) $pdo->rollBack();
-<<<<<<< HEAD
     error_log('MazSen API failure [' . $resource . ']: ' . $exception->getMessage());
-=======
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
     http_response_code(500);
     echo json_encode(['error' => 'The request could not be completed.']);
 }
