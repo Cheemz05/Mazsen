@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # MazSen Munch & Sip (PHP, Tailwind CSS, MySQL)
 
 ## XAMPP setup
@@ -54,3 +55,7 @@ The `database/schema.sql` file creates the `munch_db` database and its tables, a
 ## Logistics and rider dispatch
 
 Open `http://localhost/Mazsen%20Munch/admin/logistics.php` after signing in as the owner. Reimport `database/schema.sql` once to add rider offers, GPS coordinates, and payout settings to an older database; existing customer, rider, and order records are preserved. The initial fixed rider payout is ₱50 per delivery and can be changed in Logistics; each offer saves a payout snapshot. When the customer places an order, checkout optionally asks to share the customer phone’s location and offers the order to the closest active rider with a GPS update from the last five minutes, measured by straight-line distance. If customer location is declined or there is no recent rider GPS, dispatch falls back to rider availability and workload. Riders can accept or decline the offer in `rider-home.php`; the popup shows the order total and that rider’s delivery pay. Enable phone alerts and keep the rider app open to receive offers; offers move to the next rider if unanswered for 60 seconds. The live map and customer order tracker update from rider GPS. Assignment runs locally without an external AI service or API key.
+=======
+# Mazsen
+Mazsen Website
+>>>>>>> 69464754c591a639bef769c3d69740596b4fd76c

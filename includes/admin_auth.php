@@ -16,3 +16,7 @@ function admin_user_id(): ?int
         ? (int)$_SESSION['mazsen_admin_id']
         : null;
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 69464754c591a639bef769c3d69740596b4fd76c

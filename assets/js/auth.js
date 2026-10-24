@@ -22,6 +22,7 @@ document.querySelectorAll('a.auth-back, a.auth-brand, .auth-switch a').forEach(l
     window.setTimeout(() => { window.location.href = link.href; }, delay);
   });
 });
+<<<<<<< HEAD
 
 document.querySelectorAll('.welcome-page a[href]').forEach(link => {
   link.addEventListener('click', event => {
@@ -34,3 +35,5 @@ document.querySelectorAll('.welcome-page a[href]').forEach(link => {
     window.setTimeout(() => { window.location.href = link.href; }, delay);
   });
 });
+=======
+>>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
