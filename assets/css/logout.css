@@ -1,0 +1,14 @@
+body.is-logging-out {
+  pointer-events: none;
+  transform-origin: center top;
+  animation: mazen-logout 1s cubic-bezier(.22,.72,.18,1) forwards;
+}
+
+@keyframes mazen-logout {
+  from { opacity: 1; filter: blur(0); transform: translateY(0); }
+  to { opacity: 0; filter: blur(3px); transform: translateY(8px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.is-logging-out { animation-duration: .2s; }
+}
