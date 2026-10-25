@@ -46,9 +46,9 @@ function social_auth_http(string $url, ?array $post = null, ?string $bearerToken
 
 function social_auth_fail(string $message): never
 {
-    unset($_SESSION['customer_social_oauth']);
-    $_SESSION['customer_social_error'] = $message;
-    header('Location: login.php');
+    echo '<div style="padding: 30px; background: #fee; color: #900; font-family: sans-serif; font-size: 18px; border: 2px solid #c99; margin: 40px; border-radius: 8px;">';
+    echo '<strong>Social Auth Failed Here:</strong><br><br>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
+    echo '</div>';
     exit;
 }
 
