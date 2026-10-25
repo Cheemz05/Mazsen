@@ -7,7 +7,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
         'path' => '/',
         'secure' => $https,
         'httponly' => true,
-        'samesite' => 'Lax'
+        'samesite' => 'None'
     ]);
     session_start();
 }
