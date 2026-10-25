@@ -1,39 +1,49 @@
 <?php
 declare(strict_types=1);
-require __DIR__ . '/../includes/customer_auth.php';
+require_once __DIR__ . '/../includes/customer_auth.php';
 if (customer_user()) { header('Location: ../index.php'); exit; }
-require __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/db.php';
 if (empty($_SESSION['customer_csrf'])) $_SESSION['customer_csrf'] = bin2hex(random_bytes(32));
 $error = '';
 $buyNow = (string)($_GET['buy'] ?? $_POST['buy'] ?? '');
 $buyNow = (string)($_GET['buy'] ?? $_POST['buy'] ?? '');
 if (!preg_match('/^[a-z0-9-]{1,80}$/', $buyNow)) $buyNow = '';
-$buyQuantity = filter_var($_GET['qty'] ?? $_POST['qty'] ?? 1, FILTER_VALIDATE_INT, ['options'=>['min_range'=>1,'max_range'=>99]]) ?: 1;
-   {
+$buyQuantity = filter_var($_GET['qty'] ?? $_POST['qty'] ?? 1, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 99]]) ?: 1;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fullName = trim((string)($_POST['full_name'] ?? ''));
     $email = strtolower(trim((string)($_POST['email'] ?? '')));
     $phone = trim((string)($_POST['phone'] ?? ''));
     $address = trim((string)($_POST['address'] ?? ''));
     $password = (string)($_POST['password'] ?? '');
     $confirmation = (string)($_POST['password_confirmation'] ?? '');
-    if (!hash_equals($_SESSION['customer_csrf'], (string)($_POST['csrf'] ?? ''))) $error = 'Your session expired. Please refresh and try again.';
-    elseif (mb_strlen($fullName) < 2 || mb_strlen($fullName) > 120) $error = 'Please enter your full name.';
-    elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) $error = 'Please enter a valid email address.';
-    elseif (!preg_match('/^[0-9+() .-]{7,30}$/', $phone)) $error = 'Please enter a valid phone number.';
-    elseif ($address !== '' && (mb_strlen($address) < 8 || mb_strlen($address) > 500)) $error = 'Please enter a valid delivery address or leave it blank.';
-    elseif (strlen($password) < 8) $error = 'Choose a password with at least 8 characters.';
-    elseif ($password !== $confirmation) $error = 'The passwords do not match.';
-    else {
+
+    if (!hash_equals($_SESSION['customer_csrf'] ?? '', (string)($_POST['csrf'] ?? ''))) {
+        $error = 'Your session expired. Please refresh and try again.';
+    } elseif (mb_strlen($fullName) < 2 || mb_strlen($fullName) > 128) {
+        $error = 'Please enter your full name.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = 'Please enter a valid email address.';
+    } elseif (!preg_match('/^(09|\+639)\d{9}$/', $phone)) {
+        $error = 'Please enter a valid phone number.';
+    } elseif ($address !== '' && (mb_strlen($address) < 8 || mb_strlen($address) > 500)) {
+        $error = 'Please enter a valid delivery address or leave it blank.';
+    } elseif (mb_strlen($password) < 8) {
+        $error = 'Choose a password with at least 8 characters.';
+    } elseif ($password !== $confirmation) {
+        $error = 'The passwords do not match.';
+    } else {
         try {
-            $insert = $pdo->prepare('INSERT INTO customers (full_name,email,phone,address,password_hash) VALUES (?,?,?,?,?)');
-            $insert->execute([$fullName,$email,$phone,$address,password_hash($password, PASSWORD_DEFAULT)]);
+            $insert = $pdo->prepare('INSERT INTO customers (full_name, email, phone, address, password_hash) VALUES (?, ?, ?, ?, ?)');
+            $insert->execute([$fullName, $email, $phone, $address, password_hash($password, PASSWORD_DEFAULT)]);
             session_regenerate_id(true);
-            $_SESSION['customer'] = ['id'=>(int)$pdo->lastInsertId(),'full_name'=>$fullName,'email'=>$email,'phone'=>$phone,'address'=>$address,'profile_image'=>null];
-            if ($buyNow !== '') $_SESSION['pending_buy_now'] = ['id'=>$buyNow,'quantity'=>$buyQuantity];
+            $_SESSION['customer'] = ['id' => (int)$pdo->lastInsertId(), 'full_name' => $fullName, 'email' => $email, 'phone' => $phone, 'address' => $address, 'profile_image' => null];
+            if ($buyNow !== '') $_SESSION['pending_buy_now'] = ['id' => $buyNow, 'quantity' => $buyQuantity];
             unset($_SESSION['customer_csrf']);
-            header('Location: ../index.php#products'); exit;
-        } catch (PDOException $exception) {
-            $error = $exception->getCode() === '23000' ? 'An account with that email already exists. Sign in instead.' : 'We could not create your account. Please try again.';
+            header('Location: ../index.php#products');
+            exit;
+        } catch (PDOException $e) {
+            $error = $e->getCode() === '23000' ? 'An account with that email already exists. Sign in instead.' : 'We could not create your account. Please try again.';
         }
     }
 }
