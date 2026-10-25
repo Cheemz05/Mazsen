@@ -121,9 +121,10 @@ function social_auth_controller(string $provider): never
         unset($_SESSION['customer_csrf']);
         header('Location: ../index.php#' . (($pending['next'] ?? '') === 'products' ? 'products' : 'dashboard'));
         exit;
-    } catch (Throwable $exception) {
-        error_log('Customer social sign-in failed (' . $provider . '): ' . $exception->getMessage());
-        social_auth_fail($exception instanceof PDOException ? 'Social sign-in is not ready in the database. Import the latest database/schema.sql, then try again.' : $exception->getMessage());
-    }
+} catch (Throwable $exception) {
+    echo '<div style="padding: 20px; background: #fee; color: #900; font-family: monospace; border: 1px solid #c99; margin: 20px; border-radius: 5px;">';
+    echo '<strong>OAuth Error Caught:</strong> ' . htmlspecialchars($exception->getMessage(), ENT_QUOTES, 'UTF-8');
+    echo '</div>';
+    exit;
 }
-?>
+}
