@@ -76,9 +76,20 @@ function social_auth_controller(string $provider): never
     }
 
     $pending = $_SESSION['customer_social_oauth'] ?? null;
-    unset($_SESSION['customer_social_oauth']);
-    if (isset($_GET['error']) || !is_array($pending) || ($pending['provider'] ?? '') !== $provider || !hash_equals((string)($pending['state'] ?? ''), (string)($_GET['state'] ?? '')) || (int)($pending['created'] ?? 0) < time() - 600) social_auth_fail('Sign-in was cancelled or expired. Please try again.');
+unset($_SESSION['customer_social_oauth']);
 
+if (isset($_GET['error']) || !is_array($pending) || ($pending['provider'] ?? '') !== $provider || !hash_equals((string)($pending['state'] ?? ''), (string)($_GET['state'] ?? ''))) {
+    $err = 'Unknown';
+    if (isset($_GET['error'])) $err = 'OAuth Provider Error: ' . $_GET['error'];
+    elseif (!is_array($pending)) $err = 'Session expired or cookie lost (Session ID: ' . session_id() . ')';
+    elseif (($pending['provider'] ?? '') !== $provider) $err = 'Provider mismatch: expected ' . $provider . ', got ' . ($pending['provider'] ?? '');
+    elseif (!hash_equals((string)($pending['state'] ?? ''), (string)($_GET['state'] ?? ''))) $err = 'CSRF State mismatch! Session state vs GET state failed.';
+
+    echo '<div style="padding: 20px; background: #fee; color: #900; font-family: monospace; border: 1px solid #c99; margin: 20px; border-radius: 5px;">';
+    echo '<strong>OAuth Validation Failed:</strong> ' . htmlspecialchars($err, ENT_QUOTES, 'UTF-8');
+    echo '</div>';
+    exit;
+}
     try {
         if ($provider === 'google') {
             $tokens = social_auth_http('https://oauth2.googleapis.com/token', ['code' => (string)$_GET['code'], 'client_id' => $config['id'], 'client_secret' => $config['secret'], 'redirect_uri' => $config['callback'], 'grant_type' => 'authorization_code']);
