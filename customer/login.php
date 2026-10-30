@@ -5,7 +5,7 @@ if (customer_user()) { header('Location: ../index.php#products'); exit; }
 require __DIR__ . '/../includes/db.php';
 if (empty($_SESSION['customer_csrf'])) $_SESSION['customer_csrf'] = bin2hex(random_bytes(32));
 $error = '';
-$socialError = '';
+$socialError = $_SESSION['customer_social_error'] ?? '';
 unset($_SESSION['customer_social_error']);
 $next = ($_GET['next'] ?? $_POST['next'] ?? '') === 'products' ? 'products' : 'dashboard';
 $buyNow = (string)($_GET['buy'] ?? $_POST['buy'] ?? '');

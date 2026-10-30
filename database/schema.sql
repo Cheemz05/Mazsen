@@ -1,9 +1,5 @@
-<<<<<<< HEAD
 -- Import in phpMyAdmin to create the MazSen Munch database and tables.
 -- Safe to re-import: existing customer, admin, and order records are preserved.
-=======
--- Import this ONE file in phpMyAdmin. It creates and updates the single app database.
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
 CREATE DATABASE IF NOT EXISTS munch_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE munch_db;
 
@@ -14,17 +10,12 @@ CREATE TABLE IF NOT EXISTS customers (
   phone VARCHAR(30) NOT NULL,
   address VARCHAR(500) NOT NULL,
   profile_image VARCHAR(255) NULL DEFAULT NULL,
-<<<<<<< HEAD
   google_sub VARCHAR(255) NULL DEFAULT NULL,
   facebook_id VARCHAR(255) NULL DEFAULT NULL,
   password_hash VARCHAR(255) NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_customers_google_sub (google_sub),
   UNIQUE KEY uq_customers_facebook_id (facebook_id)
-=======
-  password_hash VARCHAR(255) NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS admin_users (
@@ -35,7 +26,6 @@ CREATE TABLE IF NOT EXISTS admin_users (
   last_login_at TIMESTAMP NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-<<<<<<< HEAD
 CREATE TABLE IF NOT EXISTS delivery_riders (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   full_name VARCHAR(120) NOT NULL,
@@ -55,14 +45,6 @@ CREATE TABLE IF NOT EXISTS store_settings (
   rider_payout DECIMAL(10,2) NOT NULL DEFAULT 50.00,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-=======
-CREATE TABLE IF NOT EXISTS store_settings (
-  id TINYINT UNSIGNED PRIMARY KEY,
-  is_open TINYINT(1) NOT NULL DEFAULT 1,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
 INSERT IGNORE INTO store_settings (id, is_open) VALUES (1, 1);
 
 CREATE TABLE IF NOT EXISTS products (
@@ -72,10 +54,7 @@ CREATE TABLE IF NOT EXISTS products (
   category VARCHAR(80) NOT NULL,
   price DECIMAL(10,2) NOT NULL,
   emoji VARCHAR(24) NOT NULL,
-<<<<<<< HEAD
   image_path VARCHAR(255) NULL DEFAULT NULL,
-=======
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
   description VARCHAR(255) NOT NULL,
   popular TINYINT(1) NOT NULL DEFAULT 0,
   active TINYINT(1) NOT NULL DEFAULT 1,
@@ -91,7 +70,6 @@ CREATE TABLE IF NOT EXISTS orders (
   customer_name VARCHAR(120) NULL,
   customer_phone VARCHAR(30) NULL,
   delivery_address VARCHAR(500) NULL,
-<<<<<<< HEAD
   customer_latitude DECIMAL(10,7) NULL DEFAULT NULL,
   customer_longitude DECIMAL(10,7) NULL DEFAULT NULL,
   order_number VARCHAR(24) NOT NULL UNIQUE,
@@ -105,10 +83,6 @@ CREATE TABLE IF NOT EXISTS orders (
   rider_latitude DECIMAL(10,7) NULL DEFAULT NULL,
   rider_longitude DECIMAL(10,7) NULL DEFAULT NULL,
   rider_location_updated_at DATETIME NULL DEFAULT NULL,
-=======
-  order_number VARCHAR(24) NOT NULL UNIQUE,
-  status VARCHAR(32) NOT NULL DEFAULT 'Pending',
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
   total DECIMAL(10,2) NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -118,7 +92,6 @@ CREATE TABLE IF NOT EXISTS orders (
   CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-<<<<<<< HEAD
 CREATE TABLE IF NOT EXISTS order_rider_offers (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   order_id BIGINT UNSIGNED NOT NULL,
@@ -134,8 +107,6 @@ CREATE TABLE IF NOT EXISTS order_rider_offers (
   CONSTRAINT fk_rider_offer_rider FOREIGN KEY (rider_id) REFERENCES delivery_riders(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-=======
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
 CREATE TABLE IF NOT EXISTS order_items (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   order_id BIGINT UNSIGNED NOT NULL,
@@ -148,7 +119,6 @@ CREATE TABLE IF NOT EXISTS order_items (
   CONSTRAINT fk_order_items_product FOREIGN KEY (product_id) REFERENCES products(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-<<<<<<< HEAD
 -- Add columns required by this app to an older orders table without deleting rows.
 DROP PROCEDURE IF EXISTS upgrade_order_columns;
 DELIMITER //
@@ -175,16 +145,6 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='customers' AND INDEX_NAME='uq_customers_facebook_id') THEN
     CREATE UNIQUE INDEX uq_customers_facebook_id ON customers (facebook_id);
   END IF;
-=======
--- Upgrade an older orders table in place, preserving all existing orders.
-DROP PROCEDURE IF EXISTS upgrade_order_customer_columns;
-DELIMITER //
-CREATE PROCEDURE upgrade_order_customer_columns()
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='customers' AND COLUMN_NAME='profile_image') THEN
-    ALTER TABLE customers ADD COLUMN profile_image VARCHAR(255) NULL DEFAULT NULL AFTER address;
-  END IF;
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
   IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders' AND COLUMN_NAME='customer_id') THEN
     ALTER TABLE orders ADD COLUMN customer_id BIGINT UNSIGNED NULL AFTER id;
   END IF;
@@ -197,7 +157,6 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders' AND COLUMN_NAME='delivery_address') THEN
     ALTER TABLE orders ADD COLUMN delivery_address VARCHAR(500) NULL AFTER customer_phone;
   END IF;
-<<<<<<< HEAD
   IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders' AND COLUMN_NAME='customer_latitude') THEN
     ALTER TABLE orders ADD COLUMN customer_latitude DECIMAL(10,7) NULL DEFAULT NULL AFTER delivery_address;
   END IF;
@@ -247,18 +206,6 @@ END//
 DELIMITER ;
 CALL upgrade_order_columns();
 DROP PROCEDURE upgrade_order_columns;
-=======
-  IF NOT EXISTS (SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders' AND INDEX_NAME='idx_orders_customer_created') THEN
-    CREATE INDEX idx_orders_customer_created ON orders (customer_id, created_at);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=DATABASE() AND TABLE_NAME='orders' AND CONSTRAINT_NAME='fk_orders_customer') THEN
-    ALTER TABLE orders ADD CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL;
-  END IF;
-END//
-DELIMITER ;
-CALL upgrade_order_customer_columns();
-DROP PROCEDURE upgrade_order_customer_columns;
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
 
 INSERT INTO products (slug,name,category,price,emoji,description,popular,sort_order) VALUES
 ('classic-burger','Classic Burger','Burgers',55,'🍔','Juicy patty, fresh lettuce, tomato and our house sauce.',1,1),
@@ -284,7 +231,6 @@ INSERT INTO products (slug,name,category,price,emoji,description,popular,sort_or
 ('egg','Egg','Add-ons',15,'🍳','Add a freshly cooked egg to your meal.',0,21),
 ('burger-patty','Burger Patty','Add-ons',20,'🍔','Add an extra burger patty to your meal.',0,22)
 ON DUPLICATE KEY UPDATE name=VALUES(name),category=VALUES(category),price=VALUES(price),emoji=VALUES(emoji),description=VALUES(description),popular=VALUES(popular),sort_order=VALUES(sort_order);
-<<<<<<< HEAD
 
 UPDATE products SET image_path = CASE slug
   WHEN 'classic-burger' THEN 'Photos/fitted-4x3-fill/Classic Burger.png'
@@ -299,5 +245,3 @@ UPDATE products SET image_path = CASE slug
   ELSE image_path
 END
 WHERE slug IN ('classic-burger','omg-overload','classic-hotdog','loaded-footlong','classic-sandwich','chicken-poppers-rice','hamsilog','pork-tapsilog','longganisilog');
-=======
->>>>>>> 69464754c591a639bef769c3d69740596b4fd76c
