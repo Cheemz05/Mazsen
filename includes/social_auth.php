@@ -231,7 +231,7 @@ function social_auth_controller(string $provider): never
 
         unset($_SESSION['customer_csrf']);
         
-        $redirectTo = ($pending['next'] ?? '') === 'products' ? 'products.php' : 'dashboard.php';
+        $redirectTo = ($pending['next'] ?? '') === 'products' ? '../index.php#products' : '../dashboard.php';
         header('Location: ' . $redirectTo);
         exit;
 
