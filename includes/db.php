@@ -21,4 +21,12 @@ try {
 } catch (PDOException $e) {
     die("Database connection failed: " . $e->getMessage());
 }
+
+// Add this helper function at the bottom:
+if (!function_exists('getDB')) {
+    function getDB(): PDO {
+        global $pdo;
+        return $pdo;
+    }
+}
 ?>
