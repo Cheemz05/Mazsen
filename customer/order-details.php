@@ -21,7 +21,6 @@ function order_details_escape(string $value): string { return htmlspecialchars($
   <link rel="stylesheet" href="../assets/css/styles.css?v=116">
   <link rel="stylesheet" href="../assets/css/logout.css?v=1">
   <style>
-    /* Quick inline styles for payment selection UI if needed */
     .payment-options { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
     .payment-option-label { display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer; }
     #reference-box { margin-top: 10px; display: none; }
@@ -32,7 +31,6 @@ function order_details_escape(string $value): string { return htmlspecialchars($
   <main class="order-details-wrap">
     <a class="order-details-back" href="../index.php#cart" aria-label="Back to cart"><span class="order-details-back-icon" aria-hidden="true">←</span><span>Back to cart</span></a>
     
-    <!-- Wrapped inside a form to submit payment choice and reference number -->
     <form action="../index.php?checkout_confirmed=1" method="POST" class="order-details-card" aria-labelledby="order-details-title">
       <span class="order-details-kicker">CHECKOUT · STEP 1 OF 2</span>
       <h1 id="order-details-title">Confirm your account details &amp; Payment</h1>
@@ -42,9 +40,8 @@ function order_details_escape(string $value): string { return htmlspecialchars($
         <div><dt>Full name</dt><dd><?= order_details_escape((string)$details['full_name']) ?></dd></div>
         <div><dt>Email address</dt><dd><?= order_details_escape((string)$details['email']) ?></dd></div>
         <div><dt>Phone number</dt><dd><?= order_details_escape((string)$details['phone']) ?></dd></div>
-        <div><dt>Delivery address</dt><dd><dl><?= nl2br(order_details_escape((string)$details['address'])) ?></dd></div>
+        <div><dt>Delivery address</dt><dd><?= nl2br(order_details_escape((string)$details['address'])) ?></dd></div>
         
-        <!-- Interactive Payment Selection replacing static text -->
         <div>
           <dt>Payment method</dt>
           <dd>
@@ -67,7 +64,6 @@ function order_details_escape(string $value): string { return htmlspecialchars($
               </label>
             </div>
 
-            <!-- Reference Number Box (Hidden by default for COD) -->
             <div id="reference-box">
               <label id="ref-label" style="font-size: 0.85rem; font-weight: 600; color: #555;">Reference Number</label>
               <input type="text" name="payment_reference" placeholder="Enter transaction ref number">
