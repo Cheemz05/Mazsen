@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/db.php'; 
+require_once __DIR__ . '/db.php'; // Adjust this path if your db.php is located elsewhere (e.g., '../db.php')
 
 if (isset($pdo) && session_status() !== PHP_SESSION_ACTIVE) {
     session_set_save_handler(
