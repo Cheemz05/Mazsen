@@ -1021,8 +1021,20 @@ document.addEventListener('click', event => {
     closeFoodDetails(); addToCart(addButton.dataset.add, start, quantity); return;
   }
 
-  const buyButton = event.target.closest('[data-buy]');
-  if (buyButton) { closeFoodDetails(); confirmBuy(buyButton.dataset.buy, Number(buyButton.dataset.buyQuantity) || 1); return; }
+const buyButton = event.target.closest('[data-buy]');
+if (buyButton) {
+    closeFoodDetails();
+    const itemId = buyButton.dataset.buy;
+    const qty = Number(buyButton.dataset.buyQuantity) || 1;
+    
+    // Set the cart to this quick-buy item and save
+    cart = [{ id: itemId, quantity: qty }];
+    persist();
+    
+    // Redirect to the payment & details checkout page
+    window.location.href = 'customer/order-details.php';
+    return;
+}
 
   const cancelButton = event.target.closest('[data-cancel-order]');
   if (cancelButton) {
