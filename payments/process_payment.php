@@ -1,24 +1,20 @@
 <?php
-// process_payment.php - Main Payment Processing Gateway (Munch DB Schema)
-header('Content-Type: application/json');
-require_once __DIR__ . '/includes/db.php';
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request method.']);
-    exit;
+$contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+if (str_contains($contentType, 'application/json')) {
+    $input = json_decode(file_get_contents('php://input'), true) ?? [];
+} else {
+    $input = $_POST;
 }
-
-// Read JSON input
-$input = json_decode(file_get_contents('php://input'), true);
 
 $customerName   = filter_var($input['customer_name'] ?? '', FILTER_SANITIZE_STRING);
 $phone          = filter_var($input['phone'] ?? '', FILTER_SANITIZE_STRING);
 $fulfillment    = filter_var($input['fulfillment'] ?? 'delivery', FILTER_SANITIZE_STRING);
 $address        = filter_var($input['address'] ?? '', FILTER_SANITIZE_STRING);
-$paymentMethod  = filter_var($input['payment_method'] ?? '', FILTER_SANITIZE_STRING);
+$paymentMethod  = filter_var($input['payment_method'] ?? 'cod', FILTER_SANITIZE_STRING);
 $items          = $input['items'] ?? [];
 $totalAmount    = floatval($input['total_amount'] ?? 0);
-$refNumber      = filter_var($input['reference_number'] ?? '', FILTER_SANITIZE_STRING);
+$refNumber      = filter_var($input['payment_reference'] ?? $input['reference_number'] ?? '', FILTER_SANITIZE_STRING);
 $customerId     = isset($input['customer_id']) ? intval($input['customer_id']) : null;
 
 if (empty($customerName) || empty($phone) || empty($items) || $totalAmount <= 0) {
