@@ -1,8 +1,10 @@
 <?php
 declare(strict_types=1);
 
+// Include your database connection to get the $pdo object
 require_once __DIR__ . '/db.php'; // Adjust this path if your db.php is located elsewhere (e.g., '../db.php')
 
+// Configure PHP to save session data in MySQL instead of volatile local files
 if (isset($pdo) && session_status() !== PHP_SESSION_ACTIVE) {
     session_set_save_handler(
         function($path, $name) { return true; },
