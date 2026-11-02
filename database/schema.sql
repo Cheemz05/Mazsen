@@ -26,6 +26,13 @@ CREATE TABLE IF NOT EXISTS admin_users (
   last_login_at TIMESTAMP NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS php_sessions (
+  session_id VARCHAR(128) NOT NULL PRIMARY KEY,
+  access INT UNSIGNED NOT NULL,
+  data MEDIUMBLOB NOT NULL,
+  KEY idx_php_sessions_access (access)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS delivery_riders (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   full_name VARCHAR(120) NOT NULL,
