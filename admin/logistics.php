@@ -95,7 +95,7 @@ function logistics_h(mixed $value): string { return htmlspecialchars((string)$va
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script>
-const logisticsNavIcons=['layout-dashboard','layout-dashboard','bar-chart-3','receipt-text','trending-up'];
+const logisticsNavIcons=['layout-dashboard','map-pinned','bar-chart-3','receipt-text','trending-up'];
 document.querySelectorAll('.side-nav a').forEach((link,index)=>{
   const icon=document.createElement('span');
   icon.className='nav-icon';
