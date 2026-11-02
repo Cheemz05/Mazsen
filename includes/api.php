@@ -4,8 +4,8 @@ ini_set('display_errors', '1');
 error_reporting(E_ALL);
 
 header('Content-Type: application/json; charset=utf-8');
-require_once __DIR__ . '/customer_auth.php';
 require_once __DIR__ . '/admin_auth.php';
+require_once __DIR__ . '/customer_auth.php';
 require_once __DIR__ . '/rider_auth.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/dispatch.php';
