@@ -49,11 +49,8 @@ function logistics_h(mixed $value): string { return htmlspecialchars((string)$va
   @media(max-width:680px){.logistics-layout{display:block;padding:10px}.logistics-sidebar{position:static;display:block;width:auto;height:auto;min-height:0;margin-bottom:12px;align-items:stretch;padding:9px 11px;border-radius:17px}.brand{display:none}.side-nav{display:flex;justify-content:space-around;overflow:auto;gap:5px}.side-nav a{display:grid;justify-items:center;gap:4px;width:auto;height:auto;min-width:58px;padding:8px 7px;font-size:10px}.side-nav a:before{display:grid;width:18px;height:18px;font-size:16px}.nav-icon{width:18px;height:18px}.main{padding:17px 12px 22px;border-radius:22px}.topbar{align-items:flex-start;flex-direction:column;margin:5px 2px 16px}.topbar h1{font-size:26px}.topbar p{font-size:13px}.top-actions{width:100%;justify-content:space-between}.stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.stat{padding:12px}.stat strong{font-size:24px}.stat small{font-size:10px}.content-grid,.lower-grid{grid-template-columns:minmax(0,1fr);gap:11px;margin-top:11px}.panel{padding:13px}.map-wrap{height:330px}.dispatch-list{max-height:unset}.add-rider{grid-template-columns:1fr 1fr}.add-rider button{grid-column:1/-1;height:36px}.rider-row{flex-wrap:wrap}.rider-copy{min-width:calc(100% - 50px)}}
 </style>
 <style>
-  .side-nav a:nth-child(1):before{content:"\25A6"}
-  .side-nav a:nth-child(2):before{content:"\2316"}
-  .side-nav a:nth-child(3):before{content:"\2261"}
-  .side-nav a:nth-child(4):before{content:"\25A4"}
-  .side-nav a:nth-child(5):before{content:"\2197"}
+  .side-nav a:before{display:none!important;content:none!important}
+  .nav-icon i{display:grid;place-items:center}
 </style></head>
 <body>
 <div class="logistics-layout">
@@ -96,7 +93,17 @@ function logistics_h(mixed $value): string { return htmlspecialchars((string)$va
 </div>
 <div id="logistics-toast" class="toast hidden" role="status" aria-live="polite"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script>
+const logisticsNavIcons=['layout-dashboard','layout-dashboard','bar-chart-3','receipt-text','trending-up'];
+document.querySelectorAll('.side-nav a').forEach((link,index)=>{
+  const icon=document.createElement('span');
+  icon.className='nav-icon';
+  icon.setAttribute('aria-hidden','true');
+  icon.innerHTML=`<i data-lucide="${logisticsNavIcons[index]||'circle'}"></i>`;
+  link.prepend(icon);
+});
+if(window.lucide)lucide.createIcons();
 const csrf=<?= json_encode($csrf, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
 const api='../includes/api.php';
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
