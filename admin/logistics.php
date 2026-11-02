@@ -51,6 +51,8 @@ function logistics_h(mixed $value): string { return htmlspecialchars((string)$va
 <style>
   .side-nav a:before{display:none!important;content:none!important}
   .nav-icon i{display:grid;place-items:center}
+  .logistics-sidebar,.admin-insight-rail,.main,.stat,.panel{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+  .dispatch-map .leaflet-tile{filter:none}
 </style></head>
 <body>
 <div class="logistics-layout">
@@ -107,14 +109,54 @@ if(window.lucide)lucide.createIcons();
 const csrf=<?= json_encode($csrf, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
 const api='../includes/api.php';
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-let dispatchMap=null;const dispatchMarkers=new Map();let toastTimer=0;
+let dispatchMap=null;const dispatchMarkers=new Map();let toastTimer=0,refreshInFlight=false,hasAutoFittedMap=false,lastOrdersRenderKey=null,lastRidersRenderKey=null;
 function notify(message,isError=false){const el=document.getElementById('logistics-toast');el.textContent=message;el.classList.toggle('error',isError);el.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.add('hidden'),4500)}
 function initializeMap(){if(!window.L)return;dispatchMap=L.map('dispatch-map',{scrollWheelZoom:false}).setView([14.68,121.12],12);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'}).addTo(dispatchMap)}
 function fresh(location){if(!location)return false;const stamp=String(location).replace(' ','T');const age=(Date.now()-new Date(stamp).getTime())/1000;return Number.isFinite(age)&&age<60}
 function renderMap(orders){if(!dispatchMap)return;const positioned=orders.filter(order=>order.latitude!==null&&order.latitude!==''&&order.longitude!==null&&order.longitude!=='');const liveIds=new Set(positioned.map(order=>order.number));for(const [number,marker] of dispatchMarkers){if(!liveIds.has(number)){dispatchMap.removeLayer(marker);dispatchMarkers.delete(number)}}positioned.forEach((order,index)=>{const point=[Number(order.latitude),Number(order.longitude)];if(!point.every(Number.isFinite))return;const isFresh=fresh(order.locationUpdatedAt);const html=`<span class="order-marker ${isFresh?'':'stale'}">${index+1}</span>`;const icon=L.divIcon({className:'',html,iconSize:[31,31],iconAnchor:[15,15]});let marker=dispatchMarkers.get(order.number);if(marker){marker.setLatLng(point);marker.setIcon(icon)}else{marker=L.marker(point,{icon,title:`${order.number} · ${order.riderName||'Rider location'}`}).addTo(dispatchMap);dispatchMarkers.set(order.number,marker)}marker.bindPopup(`<strong>${esc(order.number)}</strong><br>${esc(order.riderName||'Unassigned')}<br>${esc(order.customer||'Customer')}`)});document.getElementById('map-empty').classList.toggle('hidden',positioned.length>0);document.getElementById('map-count').textContent=`${positioned.length} live location${positioned.length===1?'':'s'}`;document.getElementById('map-meta').textContent=`${positioned.length} GPS active`;if(positioned.length&&dispatchMap.getZoom()<13){const bounds=L.latLngBounds(positioned.map(o=>[Number(o.latitude),Number(o.longitude)]));dispatchMap.fitBounds(bounds,{padding:[35,35],maxZoom:14})}}
+function renderMapOptimized(orders){
+  if(!dispatchMap)return;
+  const positioned=orders.filter(order=>order.latitude!==null&&order.latitude!==''&&order.longitude!==null&&order.longitude!==''&&Number.isFinite(Number(order.latitude))&&Number.isFinite(Number(order.longitude)));
+  const liveIds=new Set(positioned.map(order=>order.number));
+  for(const [number,marker] of dispatchMarkers){
+    if(!liveIds.has(number)){dispatchMap.removeLayer(marker);dispatchMarkers.delete(number)}
+  }
+  positioned.forEach((order,index)=>{
+    const point=[Number(order.latitude),Number(order.longitude)];
+    const isFresh=fresh(order.locationUpdatedAt);
+    const popup=`<strong>${esc(order.number)}</strong><br>${esc(order.riderName||'Unassigned')}<br>${esc(order.customer||'Customer')}`;
+    let marker=dispatchMarkers.get(order.number);
+    if(!marker){
+      const icon=L.divIcon({className:'',html:`<span class="order-marker ${isFresh?'':'stale'}">${index+1}</span>`,iconSize:[31,31],iconAnchor:[15,15]});
+      marker=L.marker(point,{icon,title:`${order.number} · ${order.riderName||'Rider location'}`}).addTo(dispatchMap);
+      marker._mazsenFresh=isFresh;
+      marker._mazsenPopup=popup;
+      marker.bindPopup(popup);
+      dispatchMarkers.set(order.number,marker);
+      return;
+    }
+    const current=marker.getLatLng();
+    if(current.lat!==point[0]||current.lng!==point[1])marker.setLatLng(point);
+    if(marker._mazsenFresh!==isFresh){
+      marker.setIcon(L.divIcon({className:'',html:`<span class="order-marker ${isFresh?'':'stale'}">${index+1}</span>`,iconSize:[31,31],iconAnchor:[15,15]}));
+      marker._mazsenFresh=isFresh;
+    }
+    if(marker._mazsenPopup!==popup){marker.bindPopup(popup);marker._mazsenPopup=popup}
+  });
+  document.getElementById('map-empty').classList.toggle('hidden',positioned.length>0);
+  document.getElementById('map-count').textContent=`${positioned.length} live location${positioned.length===1?'':'s'}`;
+  document.getElementById('map-meta').textContent=`${positioned.length} GPS active`;
+  if(positioned.length&&!hasAutoFittedMap){
+    if(positioned.length===1)dispatchMap.setView([Number(positioned[0].latitude),Number(positioned[0].longitude)],14);
+    else dispatchMap.fitBounds(L.latLngBounds(positioned.map(order=>[Number(order.latitude),Number(order.longitude)])),{padding:[35,35],maxZoom:14});
+    hasAutoFittedMap=true;
+  }
+}
 function renderOrders(orders){const list=document.getElementById('dispatch-list');document.getElementById('dispatch-count').textContent=`${orders.length} order${orders.length===1?'':'s'}`;if(!orders.length){list.innerHTML='<div class="empty-list">No active orders right now.</div>';return}list.innerHTML=orders.map(order=>{const status=order.status==='Ready'?'On the way':order.status;const riderState=order.offerStatus==='Offered'?`Offer sent · awaiting response · ₱${Number(order.riderPayout||0).toFixed(2)} pay`:order.offerStatus==='Accepted'?`Accepted · ₱${Number(order.riderPayout||0).toFixed(2)} rider pay`:order.latitude!==null&&order.latitude!==''?(fresh(order.locationUpdatedAt)?'GPS live':'GPS delayed'):'Waiting for GPS';const rider=order.riderName?`<div class="assigned-row"><span class="assigned-avatar">${esc(order.riderName.trim().slice(0,1).toUpperCase())}</span><strong>${esc(order.riderName)}</strong><span class="gps-state">${esc(riderState)}</span></div>`:status==='On the way'?`<button class="dispatch-action" type="button" data-assign-order="${esc(order.number)}">✦ Auto-assign rider</button>`:'<div class="unassigned-note">No rider offer accepted yet</div>';return `<article class="dispatch-item"><div class="dispatch-item-top"><strong>${esc(order.number)}</strong><span class="dispatch-status ${status==='On the way'?'on-the-way':status==='Preparing'?'preparing':''}">${esc(status)}</span></div><div class="dispatch-address">${esc(order.customer||'Customer')} · ${esc(order.address||'No delivery address')}</div>${rider}</article>`}).join('');list.querySelectorAll('[data-assign-order]').forEach(button=>button.addEventListener('click',()=>assignOrder(button)))}
 function renderRiders(riders){const list=document.getElementById('rider-list');document.getElementById('roster-count').textContent=`${riders.length} rider${riders.length===1?'':'s'}`;if(!riders.length){list.innerHTML='<div class="empty-list">No riders added yet. Add your delivery team below.</div>';return}list.innerHTML=riders.map(rider=>`<article class="rider-row"><span class="rider-avatar">${esc(rider.name.trim().slice(0,1).toUpperCase())}</span><div class="rider-copy"><strong>${esc(rider.name)}</strong><small>${esc(rider.phone)} · ${Number(rider.hasLogin)?'App login ready':'App login not set'}${rider.updatedAt?` · GPS ${fresh(rider.updatedAt)?'active':'last seen'}`:''}</small></div><span class="rider-load">${Number(rider.activeLoad||0)} active</span><button class="rider-login" type="button" data-login-id="${Number(rider.id)}">${Number(rider.hasLogin)?'Reset login':'Set login'}</button><button class="rider-toggle ${Number(rider.active)?'':'inactive'}" type="button" data-rider-id="${Number(rider.id)}" data-active="${Number(rider.active)?'1':'0'}">${Number(rider.active)?'Active':'Inactive'}</button></article>`).join('');list.querySelectorAll('[data-rider-id]').forEach(button=>button.addEventListener('click',()=>toggleRider(button)));list.querySelectorAll('[data-login-id]').forEach(button=>button.addEventListener('click',()=>setRiderPassword(button)))}
 async function refreshLogistics(){
+  if(refreshInFlight)return;
+  refreshInFlight=true;
   try{
     const response=await fetch(`${api}?resource=logistics`,{cache:'no-store'});
     const result=await response.json();
@@ -132,11 +174,21 @@ async function refreshLogistics(){
     document.getElementById('rail-riders').textContent=activeRiders;
     document.getElementById('rail-unassigned').textContent=unassigned;
     document.getElementById('rail-waiting').textContent=waiting;
-    document.getElementById('rider-payout').value=Number(result.riderPayout||0).toFixed(2);
-    renderMap(active);
-    renderOrders(orders);
-    renderRiders(riders);
+    const payoutInput=document.getElementById('rider-payout');
+    if(document.activeElement!==payoutInput)payoutInput.value=Number(result.riderPayout||0).toFixed(2);
+    renderMapOptimized(active);
+    const orderRenderKey=JSON.stringify(orders.map(order=>[
+      order.number,order.customer,order.address,order.status,order.offerStatus,order.riderPayout,order.riderName,
+      order.latitude!==null&&order.latitude!=='',fresh(order.locationUpdatedAt)
+    ]));
+    if(orderRenderKey!==lastOrdersRenderKey){renderOrders(orders);lastOrdersRenderKey=orderRenderKey}
+    const riderRenderKey=JSON.stringify(riders.map(rider=>[
+      rider.id,rider.name,rider.phone,Number(rider.hasLogin),rider.activeLoad,Number(rider.active),
+      Boolean(rider.updatedAt),rider.updatedAt?fresh(rider.updatedAt):false
+    ]));
+    if(riderRenderKey!==lastRidersRenderKey){renderRiders(riders);lastRidersRenderKey=riderRenderKey}
   }catch(error){notify(error.message||'Logistics connection failed.',true)}
+  finally{refreshInFlight=false}
 }
 async function assignOrder(button){button.disabled=true;button.textContent='Assigning…';try{const response=await fetch(`${api}?resource=logistics-dispatch`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({number:button.dataset.assignOrder,csrf})});const result=await response.json();if(!response.ok)throw new Error(result.error||'Could not assign a rider.');const url=new URL(result.url,window.location.href).href;try{await navigator.clipboard.writeText(url);notify(`Assigned to ${result.rider.name}. Rider link copied—send it to them.`)}catch{window.prompt(`Assigned to ${result.rider.name}. Copy the rider link:`,url)}await refreshLogistics()}catch(error){notify(error.message||'Assignment failed.',true);button.disabled=false;button.textContent='✦ Auto-assign rider'}}
 async function toggleRider(button){button.disabled=true;try{const response=await fetch(`${api}?resource=logistics-riders`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:Number(button.dataset.riderId),active:button.dataset.active!=='1',csrf})});const result=await response.json();if(!response.ok)throw new Error(result.error||'Could not update rider.');await refreshLogistics()}catch(error){notify(error.message||'Could not update rider.',true);button.disabled=false}}
@@ -144,7 +196,7 @@ async function setRiderPassword(button){const password=window.prompt('Set a new 
 document.getElementById('add-rider-form').addEventListener('submit',async event=>{event.preventDefault();const form=event.currentTarget;const submit=form.querySelector('button');submit.disabled=true;try{const data=new FormData(form);const response=await fetch(`${api}?resource=logistics-riders`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:data.get('name'),phone:data.get('phone'),password:data.get('password'),csrf})});const result=await response.json();if(!response.ok)throw new Error(result.error||'Could not add rider.');form.reset();notify('Rider added. Share the rider app link and password securely.');await refreshLogistics()}catch(error){notify(error.message||'Could not add rider.',true)}finally{submit.disabled=false}});
 document.getElementById('payout-form').addEventListener('submit',async event=>{event.preventDefault();const input=document.getElementById('rider-payout'),button=event.currentTarget.querySelector('button');button.disabled=true;try{const response=await fetch(`${api}?resource=logistics-settings`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({riderPayout:Number(input.value),csrf})});const result=await response.json();if(!response.ok)throw new Error(result.error||'Could not save rider payout.');notify(`Fixed rider payout set to ₱${Number(result.riderPayout).toFixed(2)} per delivery.`)}catch(error){notify(error.message||'Could not save payout.',true)}finally{button.disabled=false}});
 document.getElementById('refresh-logistics').addEventListener('click',refreshLogistics);
-initializeMap();refreshLogistics();window.setInterval(refreshLogistics,15000);
+initializeMap();refreshLogistics();window.setInterval(()=>{if(document.visibilityState==='visible')refreshLogistics()},15000);
 </script>
 </body>
 </html>

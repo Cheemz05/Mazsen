@@ -200,6 +200,8 @@ function customerInitials(mixed $name): string {
     .order-progress-button,.rider-link-button{border-color:rgba(202,160,237,.28);background:rgba(149,98,185,.2);color:#ead3ff}
     .order-progress-button:hover,.rider-link-button:hover{background:rgba(165,111,205,.31)}
     .admin-nav a:focus-visible,.rail-signout:focus-visible,.store-toggle:focus-visible,.period-form select:focus-visible,.order-progress-button:focus-visible{outline-color:#d7b5f4}
+    /* Keep the glass look without repeatedly blurring large areas during scroll. */
+    .admin-sidebar,.admin-main,.admin-insight-rail,.admin-stat,.admin-panel,.store-toggle,.period-form select{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
   </style>
   <link rel="stylesheet" href="../assets/css/logout.css?v=1">
 </head>
