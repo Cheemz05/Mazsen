@@ -4,14 +4,26 @@ ini_set('display_errors', '1');
 error_reporting(E_ALL);
 
 header('Content-Type: application/json; charset=utf-8');
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+$resource = $_GET['resource'] ?? 'products';
+
+// Start the same session store used by the page that initiated the request.
+// Customer pages use PHP's default session handler; admin pages use MySQL.
+$adminSessionRequest = in_array($resource, ['logistics', 'logistics-settings', 'logistics-riders', 'logistics-dispatch', 'store'], true)
+    || ($resource === 'orders' && $method === 'PATCH')
+    || ($resource === 'rider-tracking' && $method === 'POST');
+if ($resource === 'rider-portal-location' || $resource === 'rider-location') {
+    require_once __DIR__ . '/rider_auth.php';
+} elseif ($adminSessionRequest) {
+    require_once __DIR__ . '/admin_auth.php';
+} else {
+    require_once __DIR__ . '/customer_auth.php';
+}
 require_once __DIR__ . '/admin_auth.php';
 require_once __DIR__ . '/customer_auth.php';
 require_once __DIR__ . '/rider_auth.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/dispatch.php';
-
-$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-$resource = $_GET['resource'] ?? 'products';
 
 try {
     if ($resource === 'rider-portal-location') {
