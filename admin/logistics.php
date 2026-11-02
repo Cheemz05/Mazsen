@@ -47,16 +47,25 @@ function logistics_h(mixed $value): string { return htmlspecialchars((string)$va
   @media(max-width:1360px){.logistics-layout{grid-template-columns:68px minmax(0,1fr);max-width:1200px}.admin-insight-rail{display:none}}
   @media(max-width:1050px){.content-grid{grid-template-columns:minmax(0,1fr)}.map-wrap{height:360px}.lower-grid{grid-template-columns:minmax(0,1fr)}}
   @media(max-width:680px){.logistics-layout{display:block;padding:10px}.logistics-sidebar{position:static;display:block;width:auto;height:auto;min-height:0;margin-bottom:12px;align-items:stretch;padding:9px 11px;border-radius:17px}.brand{display:none}.side-nav{display:flex;justify-content:space-around;overflow:auto;gap:5px}.side-nav a{display:grid;justify-items:center;gap:4px;width:auto;height:auto;min-width:58px;padding:8px 7px;font-size:10px}.side-nav a:before{display:grid;width:18px;height:18px;font-size:16px}.nav-icon{width:18px;height:18px}.main{padding:17px 12px 22px;border-radius:22px}.topbar{align-items:flex-start;flex-direction:column;margin:5px 2px 16px}.topbar h1{font-size:26px}.topbar p{font-size:13px}.top-actions{width:100%;justify-content:space-between}.stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.stat{padding:12px}.stat strong{font-size:24px}.stat small{font-size:10px}.content-grid,.lower-grid{grid-template-columns:minmax(0,1fr);gap:11px;margin-top:11px}.panel{padding:13px}.map-wrap{height:330px}.dispatch-list{max-height:unset}.add-rider{grid-template-columns:1fr 1fr}.add-rider button{grid-column:1/-1;height:36px}.rider-row{flex-wrap:wrap}.rider-copy{min-width:calc(100% - 50px)}}
+</style>
+<style>
+  .side-nav a:nth-child(1):before{content:"\25A6"}
+  .side-nav a:nth-child(2):before{content:"\2316"}
+  .side-nav a:nth-child(3):before{content:"\2261"}
+  .side-nav a:nth-child(4):before{content:"\25A4"}
+  .side-nav a:nth-child(5):before{content:"\2197"}
 </style></head>
 <body>
 <div class="logistics-layout">
   <aside class="logistics-sidebar">
     <a class="brand" href="dashboard.php"><img src="../logo.jpg" alt=""><span>MAZSEN<small>MUNCH &amp; SIP</small></span></a>
-    <div class="nav-label">OPERATIONS</div>
+    <div class="nav-label">OWNER WORKSPACE</div>
     <nav class="side-nav" aria-label="Admin navigation">
       <a href="dashboard.php" data-icon="▦">Dashboard</a>
       <a class="active" href="logistics.php" data-icon="⌖">Logistics</a>
       <a href="dashboard.php#recent-orders" data-icon="≡">Orders</a>
+      <a href="dashboard.php#sales" aria-label="Analytics" title="Analytics">Analytics</a>
+      <a href="dashboard.php#top-items" aria-label="Top items" title="Top items">Top items</a>
     </nav>
     <div class="side-foot"><strong><?= logistics_h($owner) ?></strong>Operations manager<br><a href="logout.php">Sign out</a></div>
   </aside>
