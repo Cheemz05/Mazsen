@@ -863,27 +863,9 @@ async function buyNow(id, quantity = 1) {
     return;
   }
   if (!requireDeliveryAddress()) return;
-  try {
-    const response = await fetch('includes/api.php?resource=orders', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: [{ id, quantity }] }),
-    });
-    const result = await response.json();
-    if (response.status === 401) {
-      window.location.href = `customer/login.php?next=products&buy=${encodeURIComponent(id)}`;
-      return;
-    }
-    if (response.status === 422 && /delivery address/i.test(result.error || '')) { window.location.href = 'customer/settings.php?section=address'; return; }
-    if (!response.ok) throw new Error(result.error || 'Order could not be placed.');
-    orders.unshift(result);
-    trackOrderUpdates(orders);
-    markOrderHistoryUnread(result);
-    refresh();
-    goTo('orders', false);
-    showToast(`${item.name} ordered successfully.`);
-  } catch (error) {
-    showToast(error.message || 'Could not reach the server.');
-  }
+  cart = [{ id, quantity: Math.max(1, Math.min(99, Number(quantity) || 1)) }];
+  persist();
+  window.location.href = 'customer/order-details.php';
 }
 
 function confirmBuy(id, quantity = 1) {
