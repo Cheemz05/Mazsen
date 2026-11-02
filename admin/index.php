@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/../includes/admin_auth.php';
-require __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/db.php';
 
 if (admin_user_id() !== null) { header('Location: dashboard.php'); exit; }
 if (empty($_SESSION['admin_login_csrf'])) {

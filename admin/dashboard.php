@@ -2,7 +2,7 @@
 declare(strict_types=1);
 require __DIR__ . '/../includes/admin_auth.php';
 if (admin_user_id() === null) { header('Location: index.php'); exit; }
-require __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/db.php';
 
 $storeOpen = (bool)$pdo->query('SELECT is_open FROM store_settings WHERE id = 1')->fetchColumn();
 $storeCsrf = $_SESSION['admin_store_csrf'] ??= bin2hex(random_bytes(32));

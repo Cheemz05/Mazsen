@@ -2,7 +2,7 @@
 declare(strict_types=1);
 require __DIR__ . '/../includes/admin_auth.php';
 if (admin_user_id() === null) { header('Location: index.php'); exit; }
-require __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/db.php';
 $csrf = $_SESSION['admin_order_csrf'] ??= bin2hex(random_bytes(32));
 $owner = $_SESSION['mazsen_admin_username'] ?? 'Owner';
 function logistics_h(mixed $value): string { return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8'); }
