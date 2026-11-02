@@ -5,8 +5,8 @@ if (admin_user_id() === null) { header('Location: index.php'); exit; }
 require __DIR__ . '/../includes/db.php';
 
 $storeOpen = (bool)$pdo->query('SELECT is_open FROM store_settings WHERE id = 1')->fetchColumn();
-$storeCsrf = $_SESSION['admin_store_csrf'] ?? bin2hex(random_bytes(32));
-$orderCsrf = $_SESSION['admin_order_csrf'] ?? bin2hex(random_bytes(32));
+$storeCsrf = $_SESSION['admin_store_csrf'] ??= bin2hex(random_bytes(32));
+$orderCsrf = $_SESSION['admin_order_csrf'] ??= bin2hex(random_bytes(32));
 $period = $_GET['period'] ?? '30';
 $days = in_array($period, ['7', '30', '90'], true) ? (int)$period : 30;
 
