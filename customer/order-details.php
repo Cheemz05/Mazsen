@@ -8,6 +8,9 @@ $query = $pdo->prepare('SELECT full_name, email, phone, address FROM customers W
 $query->execute([$customer['id']]);
 $details = $query->fetch();
 if (!$details || trim((string)$details['address']) === '') { header('Location: settings.php?section=address'); exit; }
+if (empty($_SESSION['checkout_csrf'])) $_SESSION['checkout_csrf'] = bin2hex(random_bytes(32));
+$checkoutError = (string)($_SESSION['checkout_error'] ?? '');
+unset($_SESSION['checkout_error']);
 function order_details_escape(string $value): string { return htmlspecialchars($value, ENT_QUOTES, 'UTF-8'); }
 ?>
 <!doctype html>
@@ -23,18 +26,19 @@ function order_details_escape(string $value): string { return htmlspecialchars($
   <style>
     .payment-options { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
     .payment-option-label { display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer; }
-    #reference-box { margin-top: 10px; display: none; }
-    #reference-box input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; margin-top: 4px; }
   </style>
 </head>
 <body class="order-details-page">
   <main class="order-details-wrap">
     <a class="order-details-back" href="../index.php#cart" aria-label="Back to cart"><span class="order-details-back-icon" aria-hidden="true">←</span><span>Back to cart</span></a>
     
-    <form action="../index.php?checkout_confirmed=1" method="POST" class="order-details-card" aria-labelledby="order-details-title">
+    <form id="checkout-form" action="../payments/start.php" method="POST" class="order-details-card" aria-labelledby="order-details-title">
       <span class="order-details-kicker">CHECKOUT · STEP 1 OF 2</span>
       <h1 id="order-details-title">Confirm your account details &amp; Payment</h1>
       <p class="order-details-intro">We’ll use these details for this delivery order. Make sure your contact number and address are correct.</p>
+      <?php if ($checkoutError !== ''): ?><p class="auth-error" role="alert"><?= order_details_escape($checkoutError) ?></p><?php endif; ?>
+      <input type="hidden" name="csrf" value="<?= order_details_escape($_SESSION['checkout_csrf']) ?>">
+      <input type="hidden" id="items-json" name="items_json" value="">
       
       <dl class="order-details-list">
         <div><dt>Full name</dt><dd><?= order_details_escape((string)$details['full_name']) ?></dd></div>
@@ -47,28 +51,23 @@ function order_details_escape(string $value): string { return htmlspecialchars($
           <dd>
             <div class="payment-options">
               <label class="payment-option-label">
-                <input type="radio" name="payment_method" value="COD" checked onchange="togglePaymentRef(false)">
+                <input type="radio" name="payment_method" value="cod" checked>
                 <span>Cash on Delivery (COD)</span>
               </label>
               <label class="payment-option-label">
-                <input type="radio" name="payment_method" value="InstaPay" onchange="togglePaymentRef(true, 'InstaPay')">
-                <span>InstaPay / Bank Transfer</span>
+                <input type="radio" name="payment_method" value="qrph">
+                <span>QR Ph (scan with GCash or a bank app)</span>
               </label>
               <label class="payment-option-label">
-                <input type="radio" name="payment_method" value="GCash" onchange="togglePaymentRef(true, 'GCash')">
+                <input type="radio" name="payment_method" value="gcash">
                 <span>GCash</span>
               </label>
               <label class="payment-option-label">
-                <input type="radio" name="payment_method" value="Maya" onchange="togglePaymentRef(true, 'Maya')">
+                <input type="radio" name="payment_method" value="paymaya">
                 <span>Maya</span>
               </label>
             </div>
-
-            <div id="reference-box">
-              <label id="ref-label" style="font-size: 0.85rem; font-weight: 600; color: #555;">Reference Number</label>
-              <input type="text" name="payment_reference" placeholder="Enter transaction ref number">
-              <small style="color: #777; font-size: 0.75rem;">Please transfer payment to our official account before placing the order.</small>
-            </div>
+            <small style="display:block;margin-top:8px;color:#777;font-size:.8rem;">Online payment opens a secure checkout. GCash and Maya can continue in their apps; QR Ph can be scanned with participating bank or wallet apps.</small>
           </dd>
         </div>
       </dl>
@@ -83,16 +82,29 @@ function order_details_escape(string $value): string { return htmlspecialchars($
   </main>
 
   <script>
-    function togglePaymentRef(show, methodName = '') {
-      const refBox = document.getElementById('reference-box');
-      const refLabel = document.getElementById('ref-label');
-      if (show) {
-        refBox.style.display = 'block';
-        refLabel.innerText = methodName + ' Reference Number';
-      } else {
-        refBox.style.display = 'none';
+    const checkoutCustomerId = <?= (int)$customer['id'] ?>;
+    const checkoutForm = document.getElementById('checkout-form');
+    checkoutForm.addEventListener('submit', event => {
+      let savedCart = [];
+      try {
+        savedCart = JSON.parse(localStorage.getItem(`mazsen-cart-v2:${checkoutCustomerId}`) || '[]');
+      } catch {}
+      const items = Array.isArray(savedCart)
+        ? savedCart.filter(item => item && typeof item.id === 'string' && Number.isInteger(Number(item.quantity)) && Number(item.quantity) > 0 && Number(item.quantity) <= 99)
+            .map(item => ({ id: item.id, quantity: Number(item.quantity) }))
+        : [];
+      if (!items.length) {
+        event.preventDefault();
+        window.alert('Your cart is empty. Return to the menu and add an item first.');
+        return;
       }
-    }
+      document.getElementById('items-json').value = JSON.stringify(items);
+      const submitButton = checkoutForm.querySelector('button[type="submit"]');
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Starting checkout…';
+      }
+    });
   </script>
 </body>
 </html>

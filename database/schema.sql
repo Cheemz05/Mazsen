@@ -81,6 +81,11 @@ CREATE TABLE IF NOT EXISTS orders (
   customer_longitude DECIMAL(10,7) NULL DEFAULT NULL,
   order_number VARCHAR(24) NOT NULL UNIQUE,
   status VARCHAR(32) NOT NULL DEFAULT 'Pending',
+  payment_method VARCHAR(32) NOT NULL DEFAULT 'COD',
+  payment_status VARCHAR(24) NOT NULL DEFAULT 'unpaid',
+  payment_provider_session_id VARCHAR(128) NULL DEFAULT NULL,
+  payment_checkout_url TEXT NULL,
+  payment_reference VARCHAR(128) NULL DEFAULT NULL,
   assigned_rider_id BIGINT UNSIGNED NULL DEFAULT NULL,
   rider_offer_status VARCHAR(24) NULL DEFAULT NULL,
   rider_offer_at DATETIME NULL DEFAULT NULL,
@@ -96,6 +101,7 @@ CREATE TABLE IF NOT EXISTS orders (
   INDEX idx_orders_customer_created (customer_id, created_at),
   INDEX idx_orders_created (created_at),
   INDEX idx_orders_status (status),
+  UNIQUE KEY uq_orders_payment_provider_session (payment_provider_session_id),
   CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -173,6 +179,21 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders' AND COLUMN_NAME='rider_offer_status') THEN
     ALTER TABLE orders ADD COLUMN rider_offer_status VARCHAR(24) NULL DEFAULT NULL AFTER assigned_rider_id;
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders' AND COLUMN_NAME='payment_method') THEN
+    ALTER TABLE orders ADD COLUMN payment_method VARCHAR(32) NOT NULL DEFAULT 'COD' AFTER status;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders' AND COLUMN_NAME='payment_status') THEN
+    ALTER TABLE orders ADD COLUMN payment_status VARCHAR(24) NOT NULL DEFAULT 'unpaid' AFTER payment_method;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders' AND COLUMN_NAME='payment_provider_session_id') THEN
+    ALTER TABLE orders ADD COLUMN payment_provider_session_id VARCHAR(128) NULL DEFAULT NULL AFTER payment_status;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders' AND COLUMN_NAME='payment_checkout_url') THEN
+    ALTER TABLE orders ADD COLUMN payment_checkout_url TEXT NULL AFTER payment_provider_session_id;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders' AND COLUMN_NAME='payment_reference') THEN
+    ALTER TABLE orders ADD COLUMN payment_reference VARCHAR(128) NULL DEFAULT NULL AFTER payment_checkout_url;
+  END IF;
   IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders' AND COLUMN_NAME='rider_offer_at') THEN
     ALTER TABLE orders ADD COLUMN rider_offer_at DATETIME NULL DEFAULT NULL AFTER rider_offer_status;
   END IF;
@@ -202,6 +223,9 @@ BEGIN
   END IF;
   IF NOT EXISTS (SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders' AND INDEX_NAME='idx_orders_assigned_rider_status') THEN
     CREATE INDEX idx_orders_assigned_rider_status ON orders (assigned_rider_id, status);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders' AND INDEX_NAME='uq_orders_payment_provider_session') THEN
+    CREATE UNIQUE INDEX uq_orders_payment_provider_session ON orders (payment_provider_session_id);
   END IF;
   IF NOT EXISTS (SELECT 1 FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=DATABASE() AND TABLE_NAME='orders' AND CONSTRAINT_NAME='fk_orders_customer') THEN
     ALTER TABLE orders ADD CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL;

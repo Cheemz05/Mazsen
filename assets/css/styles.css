@@ -1133,6 +1133,11 @@ body:not(.admin-body) .category-button.active {
   color: #98691e;
 }
 
+.order-status-awaiting-payment {
+  background: #f5edfb;
+  color: #6e3a8d;
+}
+
 .order-status-cancelled {
   background: #f5e8e6;
   color: #9a524a;
@@ -2182,6 +2187,7 @@ body:not(.admin-body) .settings-page .settings-logout { font-size:16px; }
 .order-progress-step.is-current { color:#6c1757; }
 .order-progress-step.is-current .order-progress-marker { border-color:#8b166e; background:#f5e6f1; color:#73165c; box-shadow:0 0 0 4px #f5e6f1; }
 .order-progress-cancelled { margin:14px 0; padding:10px 12px; border-radius:9px; background:#fff1ee; color:#a24f45; font-size:13px; font-weight:650; }
+.order-progress-payment { margin:14px 0; padding:10px 12px; border-radius:9px; background:#f5edfb; color:#6e3a8d; font-size:13px; font-weight:650; }
 .order-status-confirmed,.order-status-preparing { background:#eaf4ff; color:#3f6f9a; }
 .order-status-on-the-way { background:#fff0df; color:#a85f21; }
 .order-status-delivered { background:#f5e9f2; color:#723462; }

@@ -148,7 +148,7 @@ unset($_SESSION['pending_buy_now']);
       <div id="food-detail-content"></div>
     </section>
   </div>
-  <script>window.customerSignedIn = <?= $customer ? 'true' : 'false' ?>; window.customerProfile = <?= json_encode($customer ? ['id'=>(int)$customer['id'],'full_name'=>$customer['full_name'],'email'=>$customer['email'],'phone'=>$customer['phone'],'address'=>$customer['address'],'profile_image'=>$customer['profile_image'] ?? null] : null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>; window.pendingBuyNow = <?= json_encode($customer ? $pendingBuyNow : null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>; window.checkoutConfirmed = <?= isset($_GET['checkout_confirmed']) && $_GET['checkout_confirmed'] === '1' ? 'true' : 'false' ?>; window.storeOpen = true;</script>
+  <script>window.customerSignedIn = <?= $customer ? 'true' : 'false' ?>; window.customerProfile = <?= json_encode($customer ? ['id'=>(int)$customer['id'],'full_name'=>$customer['full_name'],'email'=>$customer['email'],'phone'=>$customer['phone'],'address'=>$customer['address'],'profile_image'=>$customer['profile_image'] ?? null] : null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>; window.pendingBuyNow = <?= json_encode($customer ? $pendingBuyNow : null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>; window.clearCheckoutCart = <?= $customer && isset($_GET['order_placed']) && $_GET['order_placed'] === '1' ? 'true' : 'false' ?>; window.storeOpen = true;</script>
   <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
   <script>if (window.lucide) lucide.createIcons();</script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>

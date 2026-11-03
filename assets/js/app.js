@@ -464,6 +464,7 @@ function canonicalOrderStatus(status) {
 function renderOrderProgress(status) {
   const current = canonicalOrderStatus(status);
   if (current === 'Cancelled') return '<div class="order-progress-cancelled">This order was cancelled.</div>';
+  if (current === 'Awaiting Payment') return '<div class="order-progress-payment">Waiting for payment confirmation. We will send the order to the store after it is confirmed.</div>';
   const steps = ['Preparing', 'Picked up', 'On the way', 'Delivered'];
   const activeIndex = current === 'Delivered' ? 3 : current === 'On the way' ? 2 : current === 'Preparing' ? 0 : 0;
   return `<div class="order-progress" aria-label="Order progress: ${current}"><div class="order-progress-steps">${steps.map((step, index) => `<div class="order-progress-step ${index < activeIndex ? 'is-complete' : ''} ${index === activeIndex ? 'is-current' : ''}"><span class="order-progress-marker">${index < activeIndex ? '✓' : index + 1}</span><span class="order-progress-label">${step}</span></div>`).join('')}</div></div>`;
@@ -908,45 +909,12 @@ async function cancelPendingOrder(number) {
   }
 }
 
-async function placeOrder(confirmedDetails = false) {
+function placeOrder() {
   if (menuPreviewOnly) { showToast('Ordering is unavailable while the database is offline.'); return; }
   if (window.storeOpen === false) { showToast('The store is closed and cannot accept orders right now.'); return; }
   if (!cart.length) return;
   if (!requireDeliveryAddress()) return;
-  if (!confirmedDetails) {
-    window.location.href = 'customer/order-details.php';
-    return;
-  }
-  const button = $('#checkout-button');
-  if (button) button.disabled = true;
-  try {
-    let customerLocation = null;
-    if (window.isSecureContext && navigator.geolocation) {
-      try {
-        showToast('Allow location access to match your order with the closest rider. You can decline.');
-        const position = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, maximumAge: 60000, timeout: 5000 }));
-        customerLocation = { latitude: position.coords.latitude, longitude: position.coords.longitude };
-      } catch { /* Rider assignment falls back to availability and workload when location is unavailable. */ }
-    }
-    const response = await fetch('includes/api.php?resource=orders', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: cart.map(row => ({ id: row.id, quantity: row.quantity })), customerLocation }),
-    });
-    const result = await response.json();
-    if (response.status === 401) { window.location.href = 'customer/login.php?next=products'; return; }
-    if (response.status === 422 && /delivery address/i.test(result.error || '')) { window.location.href = 'customer/settings.php?section=address'; return; }
-    if (!response.ok) throw new Error(result.error || 'Order could not be placed.');
-    orders.unshift(result);
-    trackOrderUpdates(orders);
-    markOrderHistoryUnread(result);
-    cart = [];
-    refresh();
-    goTo('orders', false);
-    showToast('Your order is in! Salamat for choosing MazSen.');
-  } catch (error) {
-    showToast(error.message || 'Could not reach the server.');
-    if (button) button.disabled = false;
-  }
+  window.location.href = 'customer/order-details.php';
 }
 
 const profileOverlay = $('#profile-overlay');
@@ -1204,6 +1172,10 @@ async function startApp() {
   const requestedCategory = new URLSearchParams(location.search).get('category');
   if (requestedCategory && menuItems.some(item => item.category === requestedCategory)) activeCategory = requestedCategory;
   if (storeResponse.ok) window.storeOpen = (await storeResponse.json()).is_open === true;
+  if (window.clearCheckoutCart) {
+    cart = [];
+    persist();
+  }
   cart = cart.filter(row => menuItems.some(item => item.id === row.id) && Number.isInteger(row.quantity) && row.quantity > 0);
   if (window.customerSignedIn) {
     const ordersResponse = await fetch('includes/api.php?resource=orders');
@@ -1237,10 +1209,10 @@ async function startApp() {
     window.pendingBuyNow = null;
     await buyNow(pendingBuy.id, pendingBuy.quantity);
   }
-  if (window.checkoutConfirmed) {
-    window.checkoutConfirmed = false;
-    history.replaceState(null, '', `${location.pathname}${location.hash}`);
-    await placeOrder(true);
+  if (window.clearCheckoutCart) {
+    window.clearCheckoutCart = false;
+    history.replaceState(null, '', `${location.pathname}#orders`);
+    showToast('Order received. Online payment status will update after provider confirmation.');
   }
   window.setInterval(() => { if (document.visibilityState === 'visible') refreshStoreStatus(); }, 60000);
 }
