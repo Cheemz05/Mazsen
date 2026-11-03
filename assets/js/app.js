@@ -58,7 +58,7 @@ let favoritesHaveUnread = readStore(favoriteUnreadStorageKey, false) === true;
 let orders = [];
 let activeCategory = 'All';
 let searchTerm = '';
-let toastTimer;
+let toastTimer, menuSearchTimer=0, customerOrderRefreshInFlight=false, storeStatusRefreshInFlight=false, customerOrdersInitialLoadFailed=false;
 let lastCartFocus = null;
 let pendingConfirmation = null;
 let lastConfirmationFocus = null;
@@ -238,7 +238,7 @@ function productCard(item, showOrderActions = true, bestSeller = false) {
   const unavailable = window.storeOpen === false || menuPreviewOnly;
   const favorite = favorites.includes(item.id);
   return `<article class="food-card ${bestSeller ? 'is-best-seller' : ''}" data-food-detail="${escapeHTML(item.id)}" tabindex="0" aria-haspopup="dialog" aria-label="View details for ${escapeHTML(item.name)}">
-    <div class="food-art">${item.image_path ? `<img class="food-photo" src="${escapeHTML(item.image_path)}" alt="${escapeHTML(item.name)}" loading="lazy"><span class="food-emoji food-emoji-fallback" aria-hidden="true">${escapeHTML(item.emoji)}</span>` : `<span class="food-emoji" aria-hidden="true">${escapeHTML(item.emoji)}</span>`}<button class="favorite-button ${favorite ? 'is-favorite' : ''}" type="button" data-favorite="${item.id}" aria-pressed="${favorite}" aria-label="${favorite ? 'Remove from' : 'Add to'} favorites">${favorite ? '♥' : '♡'}</button></div>
+    <div class="food-art">${item.image_path ? `<img class="food-photo" src="${escapeHTML(item.image_path)}" alt="${escapeHTML(item.name)}" loading="lazy" decoding="async"><span class="food-emoji food-emoji-fallback" aria-hidden="true">${escapeHTML(item.emoji)}</span>` : `<span class="food-emoji" aria-hidden="true">${escapeHTML(item.emoji)}</span>`}<button class="favorite-button ${favorite ? 'is-favorite' : ''}" type="button" data-favorite="${item.id}" aria-pressed="${favorite}" aria-label="${favorite ? 'Remove from' : 'Add to'} favorites">${favorite ? '♥' : '♡'}</button></div>
     <div class="food-body">
       <div class="food-row"><span class="food-name">${item.name}</span><span class="food-price">${money(item.price)}</span></div>
       <p class="food-desc">${item.description}</p>
@@ -685,8 +685,12 @@ function syncRiderMaps() {
     if (!Number.isFinite(point[0]) || !Number.isFinite(point[1])) return;
     const entry = riderMaps.get(order.number);
     if (entry) {
-      entry.marker.setLatLng(point);
-      entry.map.panTo(point, { animate: true, duration: 0.6 });
+      const current=entry.marker.getLatLng();
+      const moved=Math.abs(current.lat-point[0])>1e-7||Math.abs(current.lng-point[1])>1e-7;
+      if(moved){
+        entry.marker.setLatLng(point);
+        if(!entry.map.getBounds().pad(-0.15).contains(point))entry.map.panTo(point,{animate:false});
+      }
       const route = riderRouteCache.get(order.number);
       if (riderRouteEnabled.has(order.number) && route?.origin && Date.now() - (entry.lastRouteAttemptAt || route.calculatedAt) > 60000) {
         const dLat = (point[0] - route.origin.latitude) * 111320;
@@ -698,7 +702,10 @@ function syncRiderMaps() {
       }
     }
     const updated = document.querySelector(`[data-rider-map="${CSS.escape(order.number)}"]`)?.parentElement?.querySelector('[data-rider-map-caption]');
-    if (updated && !riderRouteCache.has(order.number)) updated.textContent = `Rider location updated ${new Date(String(location.updatedAt).replace(' ', 'T')).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })}`;
+    if (updated && !riderRouteCache.has(order.number)) {
+      const caption=`Rider location updated ${new Date(String(location.updatedAt).replace(' ', 'T')).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })}`;
+      if(updated.textContent!==caption)updated.textContent=caption;
+    }
   });
 }
 
@@ -1167,7 +1174,11 @@ $('#confirm-backdrop').addEventListener('click', event => {
   if (event.target === event.currentTarget) closeConfirmation();
 });
 
-$('#search-input').addEventListener('input', event => { searchTerm = event.target.value.trim(); renderMenu(); });
+$('#search-input').addEventListener('input', event => {
+  searchTerm = event.target.value.trim();
+  clearTimeout(menuSearchTimer);
+  menuSearchTimer=window.setTimeout(renderMenu,120);
+});
 $('#dashboard-search-input')?.addEventListener('focus', () => {
   const menuSearch = $('#search-input');
   if (!menuSearch) return;
@@ -1197,7 +1208,8 @@ async function startApp() {
   if (window.customerSignedIn) {
     const ordersResponse = await fetch('includes/api.php?resource=orders');
     if (ordersResponse.ok) orders = await ordersResponse.json();
-    window.setInterval(refreshCustomerOrders, 12000);
+    else customerOrdersInitialLoadFailed = true;
+    window.setInterval(() => { if (document.visibilityState === 'visible') refreshCustomerOrders(); }, 15000);
   }
   initializeOrderAlerts();
   renderPopular();
@@ -1230,7 +1242,7 @@ async function startApp() {
     history.replaceState(null, '', `${location.pathname}${location.hash}`);
     await placeOrder(true);
   }
-  window.setInterval(refreshStoreStatus, 60000);
+  window.setInterval(() => { if (document.visibilityState === 'visible') refreshStoreStatus(); }, 60000);
 }
 
 function updateWelcomeGreeting() {
@@ -1243,11 +1255,15 @@ function updateWelcomeGreeting() {
 }
 
 async function refreshCustomerOrders() {
-  if (!window.customerSignedIn) return;
+  if (!window.customerSignedIn || document.visibilityState !== 'visible' || customerOrderRefreshInFlight) return;
+  const hasTrackableOrders=orders.some(order=>!['Delivered','Completed','Cancelled'].includes(canonicalOrderStatus(order.status)));
+  if(!hasTrackableOrders&&!customerOrdersInitialLoadFailed)return;
+  customerOrderRefreshInFlight = true;
   try {
     const response = await fetch('includes/api.php?resource=orders', { cache: 'no-store' });
     if (!response.ok) return;
     const updatedOrders = await response.json();
+    customerOrdersInitialLoadFailed = false;
     const statusChanged = updatedOrders.length !== orders.length || updatedOrders.some((order, index) => order.number !== orders[index]?.number || order.status !== orders[index]?.status);
     const firstLocation = updatedOrders.some((order, index) => Boolean(order.riderLocation) && !orders[index]?.riderLocation);
     const hasChanges = statusChanged || firstLocation;
@@ -1260,6 +1276,7 @@ async function refreshCustomerOrders() {
       syncRiderMaps();
     }
   } catch { /* Keep the latest known progress while offline. */ }
+  finally { customerOrderRefreshInFlight = false; }
 }
 
 function updateStoreStatus() {
@@ -1283,6 +1300,8 @@ function updateStoreStatus() {
 }
 
 async function refreshStoreStatus() {
+  if (document.visibilityState !== 'visible' || storeStatusRefreshInFlight) return;
+  storeStatusRefreshInFlight = true;
   try {
     const response = await fetch('includes/api.php?resource=store', { cache: 'no-store' });
     if (!response.ok) return;
@@ -1295,6 +1314,7 @@ async function refreshStoreStatus() {
       if (!window.storeOpen) showToast('The store is now closed to new orders.');
     }
   } catch { /* Keep last known state while offline. */ }
+  finally { storeStatusRefreshInFlight = false; }
 }
 
 document.addEventListener('click', event => {

@@ -48,8 +48,11 @@ function customerInitials(mixed $name): string {
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#f5f7f5">
   <title>Owner Dashboard | MazSen Munch &amp; Sip</title>
-  <link rel="stylesheet" href="../assets/css/styles.css?v=84">
   <style>
+    *,*::before,*::after{box-sizing:border-box}
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    img{max-width:100%}
     :root{--admin-green:#713082;--admin-green-dark:#582665;--admin-ink:#202a24;--admin-muted:#87918a;--admin-line:#edf0ed;--admin-bg:#f5f7f5}
     body.admin-body{margin:0;background:var(--admin-bg);color:var(--admin-ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,"Segoe UI",Arial,sans-serif;font-size:14px}
     .admin-layout{display:grid;grid-template-columns:224px minmax(0,1fr);min-height:100vh;max-width:1600px;margin:auto;padding:18px;gap:18px}
